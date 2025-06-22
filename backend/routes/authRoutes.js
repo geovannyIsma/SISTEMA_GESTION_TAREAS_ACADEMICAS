@@ -14,3 +14,4 @@ router.post('/register', protect, authorize('ADMINISTRADOR'), registerUser);
 router.get('/me', protect, getMe);
 
 module.exports = router;
+                

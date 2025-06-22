@@ -30,7 +30,7 @@ const UserForm = () => {
           setFormData({
             name: userData.name,
             email: userData.email,
-            password: '', // Aseguramos que la contraseña esté vacía
+            password: '',
             role: userData.role,
           });
         } catch (err) {
@@ -72,7 +72,7 @@ const UserForm = () => {
       } else {
         // For new user, all fields are required
         if (!formData.name || !formData.email || !formData.password) {
-          throw new Error('All fields are required');
+          throw new Error('Todos los campos son obligatorios');
         }
         await api.createUser(formData);
       }
@@ -94,7 +94,7 @@ const UserForm = () => {
     <div className="py-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">
-          {isEditMode ? 'Edit User' : 'Add New User'}
+          {isEditMode ? 'Editar usuario' : 'Agregar usuario'}
         </h1>
       </div>
 
@@ -109,7 +109,7 @@ const UserForm = () => {
           <div className="space-y-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
+                Nombre completo
               </label>
               <input
                 type="text"
@@ -124,7 +124,7 @@ const UserForm = () => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
+                Correo electrónico institucional
               </label>
               <input
                 type="email"
@@ -136,12 +136,12 @@ const UserForm = () => {
                 value={formData.email}
                 onChange={handleChange}
               />
-              <p className="mt-1 text-sm text-gray-500">Must be an institutional email (@uni.edu.ec)</p>
+              <p className="mt-1 text-sm text-gray-500">Debe ser un correo electrónico institucional (@uni.edu.ec)</p>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                {isEditMode ? 'New Password (leave blank to keep current)' : 'Password'}
+              <label htmlFor="Contraseña" className="block text-sm font-medium text-gray-700">
+                {isEditMode ? 'Nueva contraseña (deja en blanco para mantener la actual)' : 'Contraseña'}
               </label>
               <input
                 type="password"
@@ -151,13 +151,12 @@ const UserForm = () => {
                 required={!isEditMode}
                 value={formData.password}
                 onChange={handleChange}
-                autoComplete="new-password" // Ayuda a evitar el autocompletado
               />
             </div>
 
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Role
+                Rol
               </label>
               <select
                 id="role"
@@ -174,20 +173,20 @@ const UserForm = () => {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-end space-x-3">
+          <div className="mt-6 flex items-center  justify-end space-x-3">
             <button
               type="button"
               onClick={() => navigate('/users')}
               className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {submitting ? 'Saving...' : isEditMode ? 'Update User' : 'Create User'}
+              {submitting ? 'Saving...' : isEditMode ? 'Actualizar usuario' : 'Crear usuarioDebe ser un correo electrónico institucional (@uni.edu.ec)'}
             </button>
           </div>
         </form>
