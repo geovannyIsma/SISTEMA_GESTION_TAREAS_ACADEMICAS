@@ -1,30 +1,26 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [
-    "express",
-    "prisma",
-    "mysql",
-    "api"
-  ],
+  "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "API REST para sistema de gestión de tareas académicas",
+  "description": "",
   "dependencies": {
-    "express": "^5.1.0",
-    "@prisma/client": "^4.12.0",
+    "@prisma/client": "^6.10.1",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "morgan": "^1.10.0"
+    "dotenv": "^16.4.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22",
-    "prisma": "^4.12.0"
+    "nodemon": "^3.1.10",
+    "prisma": "^6.10.1"
   }
 }

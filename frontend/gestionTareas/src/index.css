@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  background-color: #f3f4f6; /* Color de fondo principal */
+  color: #1f2937; /* Color de texto principal más oscuro para mejor contraste */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reset de estilos para el panel administrativo */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  display: block;
+}
+
+
+h1 {
+  line-height: 1.2;
+}
+
+button {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Estilos para los scrollbars personalizados */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Clases de utilidad para contraste */
+.high-contrast-text {
+  color: #111827;
+}
+
+.text-on-dark {
+  color: #f9fafb;
+}
+
+.text-on-primary {
+  color: white;
+}
+
+.link-on-dark {
+  color: #93c5fd;
+}
+.link-on-dark:hover {
+  color: #bfdbfe;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #4338ca;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
