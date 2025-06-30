@@ -52,10 +52,60 @@ const Dashboard = () => {
 
   // Configuración de las tarjetas de estadísticas con colores mejorados
   const statCards = [
-    { id: 'total', name: 'Total Usuarios', stat: stats.totalUsers, icon: '👥', color: 'bg-indigo-600', iconBg: 'bg-indigo-100', iconText: 'text-indigo-800' },
-    { id: 'admin', name: 'Administradores', stat: stats.adminUsers, icon: '🔑', color: 'bg-purple-600', iconBg: 'bg-purple-100', iconText: 'text-purple-800' },
-    { id: 'teacher', name: 'Docentes', stat: stats.teacherUsers, icon: '👨‍🏫', color: 'bg-green-600', iconBg: 'bg-green-100', iconText: 'text-green-800' },
-    { id: 'student', name: 'Estudiantes', stat: stats.studentUsers, icon: '👨‍🎓', color: 'bg-blue-600', iconBg: 'bg-blue-100', iconText: 'text-blue-800' }
+    { 
+      id: 'total', 
+      name: 'Total Usuarios', 
+      stat: stats.totalUsers, 
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        </svg>
+      ), 
+      color: 'bg-indigo-600', 
+      iconBg: 'bg-indigo-100', 
+      iconText: 'text-indigo-800' 
+    },
+    { 
+      id: 'admin', 
+      name: 'Administradores', 
+      stat: stats.adminUsers, 
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+        </svg>
+      ), 
+      color: 'bg-purple-600', 
+      iconBg: 'bg-purple-100', 
+      iconText: 'text-purple-800' 
+    },
+    { 
+      id: 'teacher', 
+      name: 'Docentes', 
+      stat: stats.teacherUsers, 
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+      ), 
+      color: 'bg-green-600', 
+      iconBg: 'bg-green-100', 
+      iconText: 'text-green-800' 
+    },
+    { 
+      id: 'student', 
+      name: 'Estudiantes', 
+      stat: stats.studentUsers, 
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+        </svg>
+      ), 
+      color: 'bg-blue-600', 
+      iconBg: 'bg-blue-100', 
+      iconText: 'text-blue-800' 
+    }
   ];
   
   // Agregar observadores si hay alguno
@@ -64,7 +114,12 @@ const Dashboard = () => {
       id: 'observer', 
       name: 'Observadores', 
       stat: stats.observerUsers, 
-      icon: '👁️', 
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      ), 
       color: 'bg-amber-600',
       iconBg: 'bg-amber-100', 
       iconText: 'text-amber-800'
@@ -124,7 +179,7 @@ const Dashboard = () => {
                 <div className="p-5">
                   <div className="flex items-center">
                     <div className={`${stat.iconBg} ${stat.iconText} rounded-full p-3`}>
-                      <span className="text-xl">{stat.icon}</span>
+                      {stat.icon}
                     </div>
                     <div className="ml-4">
                       <h2 className="text-sm font-medium text-gray-600">{stat.name}</h2>
