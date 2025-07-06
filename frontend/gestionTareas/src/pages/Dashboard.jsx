@@ -14,6 +14,9 @@ const Dashboard = () => {
     observerUsers: 0
   });
   const [recentUsers, setRecentUsers] = useState([]);
+  const [tareas, setTareas] = useState([]);
+  const [error, setError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   
   // Obtener datos de usuarios para el panel de administrador
   useEffect(() => {
@@ -50,6 +53,58 @@ const Dashboard = () => {
     fetchData();
   }, [user]);
 
+  // Cargar tareas del docente o estudiante
+  useEffect(() => {
+    if (user?.role === 'DOCENTE') {
+      fetchTareasDocente();
+    } else if (user?.role === 'ESTUDIANTE') {
+      fetchTareasEstudiante();
+    }
+    // eslint-disable-next-line
+  }, [user]);
+
+  // Tareas del docente
+  const fetchTareasDocente = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.listarTareasDocente();
+      setTareas(res.data);
+    } catch (err) {
+      setError('Error al cargar tareas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Tareas asignadas al estudiante
+  const fetchTareasEstudiante = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Suponiendo que tienes un endpoint para listar tareas asignadas al estudiante autenticado
+      const res = await api.listarTareasEstudiante?.();
+      setTareas(res.data);
+    } catch (err) {
+      setError('Error al cargar tareas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('¿Seguro que desea eliminar esta tarea?')) return;
+    setDeletingId(id);
+    try {
+      await api.editarTarea(id, { eliminado: true }); // Si tienes endpoint delete, usa api.deleteTarea(id)
+      setTareas(tareas.filter(t => t.id !== id));
+    } catch (err) {
+      alert('Error al eliminar tarea');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   // Configuración de las tarjetas de estadísticas con colores mejorados
   const statCards = [
     { id: 'total', name: 'Total Usuarios', stat: stats.totalUsers, icon: '👥', color: 'bg-indigo-600', iconBg: 'bg-indigo-100', iconText: 'text-indigo-800' },
@@ -69,6 +124,118 @@ const Dashboard = () => {
       iconBg: 'bg-amber-100', 
       iconText: 'text-amber-800'
     });
+  }
+
+  // Mostrar directamente la gestión de tareas para docentes
+  if (user && user.role === 'DOCENTE') {
+    const tareasHabilitadas = tareas.filter(t => t.habilitada !== false);
+    return (
+      <div className="py-6">
+        <h1 className="text-2xl font-bold mb-2">Bienvenido, {user.name}</h1>
+        <p className="mb-6 text-gray-700">Estas son tus tareas asignadas:</p>
+        {error && <div className="text-red-600 mb-4">{error}</div>}
+        {loading ? (
+          <div>Cargando...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white rounded shadow divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Título</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Descripción</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Fecha Límite</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Archivo</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {tareasHabilitadas.map((t) => (
+                  <tr key={t.id}>
+                    <td className="px-6 py-4 border-r align-top">{t.titulo}</td>
+                    <td className="px-6 py-4 border-r align-top">{t.descripcion}</td>
+                    <td className="px-6 py-4 border-r align-top">{new Date(t.fechaEntrega).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 border-r align-top">
+                      {t.archivoUrl ? (
+                        <a
+                          href={t.archivoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 underline"
+                        >
+                          Ver archivo
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {tareasHabilitadas.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-center py-4 text-gray-500">No hay tareas</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ESTUDIANTE: saludo + tabla de tareas asignadas (misma estructura)
+  if (user && user.role === 'ESTUDIANTE') {
+    const tareasHabilitadas = tareas.filter(t => t.habilitada !== false);
+    return (
+      <div className="py-6">
+        <h1 className="text-2xl font-bold mb-2">Bienvenido, {user.name}</h1>
+        <p className="mb-6 text-gray-700">Estas son tus tareas asignadas:</p>
+        {error && <div className="text-red-600 mb-4">{error}</div>}
+        {loading ? (
+          <div>Cargando...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white rounded shadow divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Título</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Descripción</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Fecha Límite</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Archivo</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {tareasHabilitadas.map((t) => (
+                  <tr key={t.id}>
+                    <td className="px-6 py-4 border-r align-top">{t.titulo}</td>
+                    <td className="px-6 py-4 border-r align-top">{t.descripcion}</td>
+                    <td className="px-6 py-4 border-r align-top">{new Date(t.fechaEntrega).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 border-r align-top">
+                      {t.archivoUrl ? (
+                        <a
+                          href={t.archivoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 underline"
+                        >
+                          Ver archivo
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {tareasHabilitadas.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-center py-4 text-gray-500">No hay tareas asignadas</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Mostrar mensaje para usuarios no administradores
@@ -167,10 +334,10 @@ const Dashboard = () => {
                 >
                   <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                  </svg>
-                  Configuración del Sistema
-                  <span className="ml-2 text-xs">(próximamente)</span>
-                </button>
+                </svg>
+                Configuración del Sistema
+                <span className="ml-2 text-xs">(próximamente)</span>
+              </button>
               </div>
             </div>
           </div>

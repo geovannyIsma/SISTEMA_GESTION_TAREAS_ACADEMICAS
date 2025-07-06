@@ -16,6 +16,11 @@ const Sidebar = ({ isOpen }) => {
       items.push({ id: 'users', name: 'Gestión de Usuarios', icon: '👥', path: '/users' });
     }
     
+    // Elementos solo para docentes
+    if (user?.role === 'DOCENTE') {
+      items.push({ id: 'tareas', name: 'Mis Tareas', icon: '📝', path: '/docente/tareas' });
+    }
+    
     // Agregar otros elementos que se implementarán más adelante
     items.push(
       { id: 'settings', name: 'Configuración', icon: '⚙️', path: '/settings', disabled: true }

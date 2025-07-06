@@ -11,6 +11,12 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+enum Estado {
+  PENDIENTE
+  EN_PROCESO
+  COMPLETADA
+  CANCELADA
+}
 
 model User {
   id        Int      @id @default(autoincrement())
@@ -20,6 +26,11 @@ model User {
   role      Role     @default(ESTUDIANTE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tareas    Tareas[]
+  tareasDocente Tarea[] @relation("UserTareasDocente")
+  cursos    Curso[] @relation("CursoEstudiantes")
+  asignacionesEstudiante TareaAsignacion[] @relation("AsignacionEstudiante")
+  entregas Entrega[] @relation("EntregaEstudiante")
 }
 
 enum Role {
@@ -27,4 +38,57 @@ enum Role {
   DOCENTE
   ESTUDIANTE
   OBSERVADOR
+}
+model Tareas {
+  id          Int      @id @default(autoincrement())
+  titulo      String
+  descripcion String
+  fecha       DateTime @default(now())
+  estado      Estado   @default(PENDIENTE)
+  usuarioId   Int
+  usuario     User     @relation(fields: [usuarioId], references: [id])
+}
+
+model Curso {
+  id      Int     @id @default(autoincrement())
+  nombre  String
+  // Relación con estudiantes (opcional)
+  estudiantes User[] @relation("CursoEstudiantes")
+  // Relación con asignaciones de tareas
+  asignaciones TareaAsignacion[]
+}
+
+model Tarea {
+  id           Int      @id @default(autoincrement())
+  titulo       String
+  descripcion  String
+  fechaEntrega DateTime
+  docenteId    Int
+  docente      User     @relation("UserTareasDocente", fields: [docenteId], references: [id])
+  archivoUrl   String?
+  habilitada   Boolean  @default(true)
+  asignaciones TareaAsignacion[]
+  entregas     Entrega[]
+}
+
+model TareaAsignacion {
+  id        Int    @id @default(autoincrement())
+  tareaId   Int
+  tarea     Tarea  @relation(fields: [tareaId], references: [id])
+  cursoId   Int?   // Si es grupal
+  curso     Curso? @relation(fields: [cursoId], references: [id])
+  estudianteId Int? // Si es individual
+  estudiante   User? @relation("AsignacionEstudiante", fields: [estudianteId], references: [id])
+}
+
+model Entrega {
+  id           Int      @id @default(autoincrement())
+  tareaId      Int
+  tarea        Tarea    @relation(fields: [tareaId], references: [id])
+  estudianteId Int
+  estudiante   User     @relation("EntregaEstudiante", fields: [estudianteId], references: [id])
+  fecha        DateTime @default(now())
+  archivoUrl   String?
+  calificacion Int?
+  observaciones String?
 }

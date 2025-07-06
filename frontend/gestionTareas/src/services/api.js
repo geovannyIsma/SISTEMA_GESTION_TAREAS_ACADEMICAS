@@ -49,6 +49,22 @@ export const api = {
   createUser: (userData) => apiRequest('/users', 'POST', userData),
   updateUser: (id, userData) => apiRequest(`/users/${id}`, 'PUT', userData),
   deleteUser: (id) => apiRequest(`/users/${id}`, 'DELETE'),
+
+  // Tareas Docente
+  crearTarea: (data) => apiRequest('/docente/tareas', 'POST', data),
+  editarTarea: (id, data) => apiRequest(`/docente/tareas/${id}`, 'PUT', data),
+  asignarTarea: (id, data) => apiRequest(`/docente/tareas/${id}/asignar`, 'POST', data),
+  listarTareasDocente: () => apiRequest('/docente/tareas'),
+  deshabilitarTarea: (id) => apiRequest(`/docente/tareas/${id}`, 'PUT', { habilitada: false }),
+
+  // Tareas Estudiante
+  listarTareasEstudiante: () => apiRequest('/estudiante/tareas'),
+
+  // Buscar estudiantes por nombre o apellido
+  buscarEstudiantes: (query) => apiRequest(`/users?search=${encodeURIComponent(query)}&role=ESTUDIANTE`),
+
+  // Listar estudiantes para docentes
+  listarEstudiantesDocente: (search = '') => apiRequest(`/docente/estudiantes?search=${encodeURIComponent(search)}`),
 };
 
 export default api;
