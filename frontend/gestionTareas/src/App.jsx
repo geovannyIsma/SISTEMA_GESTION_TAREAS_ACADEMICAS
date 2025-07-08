@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import UsersList from './pages/users/UsersList';
 import UserForm from './pages/users/UserForm';
 import Login from './pages/Login';
+import TareasDocente from './pages/docente/TareasDocente';
 import './App.css';
 
 function App() {
@@ -41,6 +42,12 @@ function App() {
               </AdminLayout>
             } />
           </Route>
+          {/* Rutas para docentes */}
+          <Route path="/docente/tareas" element={
+            <AdminLayout>
+              <TareasDocente />
+            </AdminLayout>
+          } />
         </Route>
         
         {/* Redirección por defecto */}

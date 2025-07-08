@@ -35,6 +35,11 @@ const Sidebar = ({ isOpen }) => {
       });
     }
     
+    // Elementos solo para docentes
+    if (user?.role === 'DOCENTE') {
+      items.push({ id: 'tareas', name: 'Mis Tareas', icon: '📝', path: '/docente/tareas' });
+    }
+    
     // Agregar otros elementos que se implementarán más adelante
     items.push(
       { 
