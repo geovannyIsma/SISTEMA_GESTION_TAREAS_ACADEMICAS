@@ -1,10 +1,28 @@
 import { useEffect, useState, useRef } from 'react';
 import api from '../../services/api';
+import Alert from '../../components/alert';
+import Dialog from '../../components/dialog';
 
 const TareasDocente = () => {
   const [tareas, setTareas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  
+  // Estado para alertas
+  const [alertConfig, setAlertConfig] = useState({
+    type: 'error',
+    message: '',
+    isVisible: false
+  });
+
+  // Estado para diálogos
+  const [dialogConfig, setDialogConfig] = useState({
+    isOpen: false,
+    type: 'warning',
+    title: '',
+    message: '',
+    action: null,
+    tareaId: null
+  });
 
   // Formulario de nueva tarea
   const [form, setForm] = useState({
@@ -14,14 +32,12 @@ const TareasDocente = () => {
     archivo: null,
   });
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState('');
   const fileInputRef = useRef();
 
   // Estado para edición y asignación
   const [editId, setEditId] = useState(null);
   const [assignId, setAssignId] = useState(null);
   const [assignData, setAssignData] = useState({ cursoId: '', estudianteId: '' });
-  const [assignError, setAssignError] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
@@ -35,14 +51,52 @@ const TareasDocente = () => {
     fetchTareas();
   }, []);
 
+  // Función para mostrar alertas
+  const showAlert = (type, message, duration = 5000) => {
+    setAlertConfig({ type, message, isVisible: true, duration });
+  };
+
+  // Función para cerrar alertas
+  const closeAlert = () => {
+    setAlertConfig(prev => ({ ...prev, isVisible: false }));
+  };
+
+  // Función para mostrar diálogo
+  const showDialog = (type, title, message, action, tareaId = null) => {
+    setDialogConfig({
+      isOpen: true,
+      type,
+      title,
+      message,
+      action,
+      tareaId
+    });
+  };
+
+  // Función para cerrar diálogo
+  const closeDialog = () => {
+    setDialogConfig({ ...dialogConfig, isOpen: false });
+  };
+
+  // Ejecutar acción al confirmar diálogo
+  const handleDialogConfirm = async () => {
+    const { action, tareaId } = dialogConfig;
+    closeDialog();
+
+    if (action === 'disable') {
+      await disableTarea(tareaId);
+    } else if (action === 'enable') {
+      await enableTarea(tareaId);
+    }
+  };
+
   const fetchTareas = async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await api.listarTareasDocente();
       setTareas(res.data);
     } catch (err) {
-      setError('Error al cargar tareas');
+      showAlert('error', 'Error al cargar tareas');
     } finally {
       setLoading(false);
     }
@@ -64,17 +118,15 @@ const TareasDocente = () => {
       fechaEntrega: '',
       archivo: null,
     });
-    setFormError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError('');
     setSubmitting(true);
 
     if (!form.titulo || !form.descripcion || !form.fechaEntrega) {
-      setFormError('Todos los campos son obligatorios');
+      showAlert('error', 'Todos los campos son obligatorios');
       setSubmitting(false);
       return;
     }
@@ -95,10 +147,11 @@ const TareasDocente = () => {
         archivoUrl, // En backend real, guarda la URL del archivo subido
       });
 
+      showAlert('success', 'Tarea creada exitosamente');
       handleReset();
       fetchTareas();
     } catch (err) {
-      setFormError('Error al crear tarea');
+      showAlert('error', 'Error al crear tarea');
     } finally {
       setSubmitting(false);
     }
@@ -107,25 +160,24 @@ const TareasDocente = () => {
   // Asignar tarea a curso o estudiante
   const handleAssign = (tareaId) => {
     setAssignId(tareaId);
-    setAssignError('');
     setAssignData({ cursoId: '', estudianteId: '' });
   };
 
   const submitAssign = async (e) => {
     e.preventDefault();
-    setAssignError('');
     setAssigning(true);
     try {
       if (!assignData.cursoId && !assignData.estudianteId) {
-        setAssignError('Debe ingresar un curso o estudiante');
+        showAlert('error', 'Debe ingresar un curso o estudiante');
         setAssigning(false);
         return;
       }
       await api.asignarTarea(assignId, assignData);
       setAssignId(null);
       fetchTareas();
+      showAlert('success', 'Tarea asignada exitosamente');
     } catch (err) {
-      setAssignError('Error al asignar tarea');
+      showAlert('error', 'Error al asignar tarea');
     } finally {
       setAssigning(false);
     }
@@ -143,28 +195,57 @@ const TareasDocente = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Confirmar deshabilitar tarea
+  const confirmDisable = (id) => {
+    const tarea = tareas.find(t => t.id === id);
+    if (!tarea) return;
+
+    showDialog(
+      'warning',
+      'Deshabilitar Tarea',
+      `¿Está seguro de que desea deshabilitar la tarea "${tarea.titulo}"? Los estudiantes no podrán verla.`,
+      'disable',
+      id
+    );
+  };
+
   // Deshabilitar tarea
-  const handleDisable = async (id) => {
-    if (!window.confirm('¿Seguro que desea deshabilitar esta tarea?')) return;
+  const disableTarea = async (id) => {
     setDeletingId(id);
     try {
       await api.deshabilitarTarea(id);
       await fetchTareas();
+      showAlert('success', 'Tarea deshabilitada exitosamente');
     } catch (err) {
-      alert('Error al deshabilitar tarea');
+      showAlert('error', 'Error al deshabilitar tarea');
     } finally {
       setDeletingId(null);
     }
   };
 
+  // Confirmar habilitar tarea
+  const confirmEnable = (id) => {
+    const tarea = tareas.find(t => t.id === id);
+    if (!tarea) return;
+
+    showDialog(
+      'question',
+      'Habilitar Tarea',
+      `¿Está seguro de que desea habilitar la tarea "${tarea.titulo}"? Los estudiantes podrán verla nuevamente.`,
+      'enable',
+      id
+    );
+  };
+
   // Habilitar tarea
-  const handleEnable = async (id) => {
+  const enableTarea = async (id) => {
     setDeletingId(id);
     try {
       await api.editarTarea(id, { habilitada: true });
       await fetchTareas();
+      showAlert('success', 'Tarea habilitada exitosamente');
     } catch (err) {
-      alert('Error al habilitar tarea');
+      showAlert('error', 'Error al habilitar tarea');
     } finally {
       setDeletingId(null);
     }
@@ -193,97 +274,49 @@ const TareasDocente = () => {
   // Asignar tarea a estudiante seleccionado
   const handleAssignStudent = async (estudianteId) => {
     setAssigningTo(estudianteId);
-    setAssignError('');
     setAssigning(true);
     try {
       await api.asignarTarea(assignId, { estudianteId });
       setAssignId(null);
       fetchTareas();
+      showAlert('success', 'Tarea asignada al estudiante exitosamente');
     } catch (err) {
-      setAssignError('Error al asignar tarea');
+      showAlert('error', 'Error al asignar tarea al estudiante');
     } finally {
       setAssigning(false);
       setAssigningTo(null);
     }
   };
 
-  // Modal o sección para asignar tarea
-  {assignId && (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl">
-        <h3 className="text-lg font-semibold mb-4">Asignar tarea a estudiante</h3>
-        {assignError && <div className="text-red-600 mb-2">{assignError}</div>}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Buscar estudiante por nombre o correo</label>
-          <input
-            type="text"
-            className="block w-full border border-gray-300 rounded px-3 py-2"
-            value={studentQuery}
-            onChange={e => handleStudentFilter(e.target.value)}
-            placeholder="Ej: Juan Pérez"
-            autoComplete="off"
-          />
-        </div>
-        <div className="overflow-x-auto max-h-72">
-          <table className="min-w-full bg-white rounded shadow divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Nombre</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Correo</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredStudents.map(est => (
-                <tr key={est.id}>
-                  <td className="px-4 py-2 border-r">{est.name}</td>
-                  <td className="px-4 py-2 border-r">{est.email}</td>
-                  <td className="px-4 py-2 text-center">
-                    <button
-                      className="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700"
-                      onClick={() => handleAssignStudent(est.id)}
-                      disabled={assigning && assigningTo === est.id}
-                    >
-                      {assigning && assigningTo === est.id ? 'Asignando...' : 'Asignar'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredStudents.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="text-center py-4 text-gray-500">No se encontraron estudiantes</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex gap-3 mt-4 justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              setAssignId(null);
-              setStudentQuery('');
-              setFilteredStudents([]);
-              setAssignData({ cursoId: '', estudianteId: '' });
-            }}
-            className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-            disabled={assigning}
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-
   return (
     <div className="py-6">
       <h1 className="text-2xl font-bold mb-4">Mis Tareas</h1>
 
+      {/* Componente de alerta */}
+      <Alert 
+        type={alertConfig.type}
+        message={alertConfig.message}
+        isVisible={alertConfig.isVisible}
+        onClose={closeAlert}
+        autoHideDuration={alertConfig.duration || 5000}
+      />
+
+      {/* Componente de diálogo */}
+      <Dialog
+        isOpen={dialogConfig.isOpen}
+        onClose={closeDialog}
+        title={dialogConfig.title}
+        type={dialogConfig.type}
+        onConfirm={handleDialogConfirm}
+        confirmText="Confirmar"
+        cancelText="Cancelar"
+      >
+        <p>{dialogConfig.message}</p>
+      </Dialog>
+
       {/* Formulario para crear tarea */}
       <div className="bg-white rounded shadow p-6 mb-8">
         <h2 className="text-lg font-semibold mb-4">Crear nueva tarea</h2>
-        {formError && <div className="text-red-600 mb-2">{formError}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Título</label>
@@ -353,7 +386,6 @@ const TareasDocente = () => {
       </div>
 
       {/* Tabla de tareas */}
-      {error && <div className="text-red-600 mb-4">{error}</div>}
       {loading ? (
         <div>Cargando...</div>
       ) : (
@@ -408,7 +440,7 @@ const TareasDocente = () => {
                       )}
                       <button
                         className="bg-gray-500 text-white px-3 py-1 rounded text-xs hover:bg-gray-600"
-                        onClick={() => handleDisable(t.id)}
+                        onClick={() => confirmDisable(t.id)}
                         disabled={deletingId === t.id || t.habilitada === false}
                       >
                         {t.habilitada === false
@@ -417,7 +449,7 @@ const TareasDocente = () => {
                       </button>
                       <button
                         className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600"
-                        onClick={() => handleEnable(t.id)}
+                        onClick={() => confirmEnable(t.id)}
                         disabled={deletingId === t.id || t.habilitada === true}
                       >
                         {t.habilitada === true
@@ -446,7 +478,6 @@ const TareasDocente = () => {
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl">
             <h3 className="text-lg font-semibold mb-4">Asignar tarea a estudiante</h3>
-            {assignError && <div className="text-red-600 mb-2">{assignError}</div>}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Buscar estudiante por nombre o correo</label>
               <input

@@ -1,24 +1,130 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { validateEmail, validatePassword, sanitizeInput } from '../utils/validation';
+import Alert from '../components/alert';
+import Dialog from '../components/dialog';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const { login, loading } = useAuth();
   const navigate = useNavigate();
+  
+  // Estados para validaciones
+  const [emailValidation, setEmailValidation] = useState({ isValid: true, message: '', touched: false });
+  const [passwordValidation, setPasswordValidation] = useState({ 
+    isValid: false, 
+    touched: false, 
+    message: '' 
+  });
+  
+  // Estado para alerta
+  const [alertConfig, setAlertConfig] = useState({
+    type: 'error',
+    message: '',
+    isVisible: false
+  });
+  
+  // Estado para diálogo
+  const [dialogConfig, setDialogConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  // Función para mostrar alertas
+  const showAlert = (type, message, duration = 5000) => {
+    setAlertConfig({ type, message, isVisible: true, duration });
+  };
+
+  // Función para cerrar alertas
+  const closeAlert = () => {
+    setAlertConfig(prev => ({ ...prev, isVisible: false }));
+  };
+
+  // Función para mostrar diálogos
+  const showDialog = (title, message, type = 'info') => {
+    setDialogConfig({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  // Función para cerrar diálogos
+  const closeDialog = () => {
+    setDialogConfig({ ...dialogConfig, isOpen: false });
+  };
+
+
+  const handleEmailChange = (e) => {
+    const value = sanitizeInput(e.target.value);
+    setEmail(value);
+    
+    if (value) {
+      const validation = validateEmail(value);
+      setEmailValidation({ ...validation, touched: true });
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+    setShowPasswordRequirements(true);
+    
+    if (value) {
+      const validation = validatePassword(value);
+      setPasswordValidation({
+        isValid: validation.isValid,
+        touched: true,
+        minLength: validation.minLength,
+        hasUpperCase: validation.hasUpperCase,
+        hasLowerCase: validation.hasLowerCase,
+        hasNumber: validation.hasNumber,
+        hasSpecialChar: validation.hasSpecialChar,
+        message: validation.message
+      });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     
     try {
+      // Validar el email
+      const emailCheck = validateEmail(email);
+      if (!emailCheck.isValid) {
+        showAlert('error', emailCheck.message);
+        return;
+      }
+
       await login(email, password);
-      navigate('/dashboard');
+      showAlert('success', '¡Inicio de sesión exitoso!', 1500);
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     } catch (err) {
-      setError(err.message || 'Error al iniciar sesión');
+      // Si el error es de credenciales inválidas, podría ser por no cumplir requisitos
+      if (err.message?.includes('Credenciales inválidas')) {
+        setShowPasswordRequirements(true);
+      }
+      showAlert('error', err.message || 'Error al iniciar sesión');
     }
+  };
+
+  // Estilo dinámico para campos según validación
+  const getInputClasses = (isValid, touched) => {
+    const baseClasses = "appearance-none relative block w-full px-3 py-3 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:z-10 sm:text-sm";
+    
+    if (!touched) return `${baseClasses} border border-gray-300`;
+    
+    return isValid 
+      ? `${baseClasses} border border-green-500` 
+      : `${baseClasses} border border-red-500`;
   };
 
   return (
@@ -33,23 +139,29 @@ const Login = () => {
           </p>
         </div>
         
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded" role="alert">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Componente de alerta */}
+        <Alert 
+          type={alertConfig.type}
+          message={alertConfig.message}
+          isVisible={alertConfig.isVisible}
+          onClose={closeAlert}
+          autoHideDuration={alertConfig.duration || 5000}
+        />
+        
+        {/* Componente de diálogo */}
+        <Dialog
+          isOpen={dialogConfig.isOpen}
+          onClose={closeDialog}
+          title={dialogConfig.title}
+          type={dialogConfig.type}
+          confirmText="Entendido"
+          showCancel={false}
+        >
+          <p className="whitespace-pre-line">{dialogConfig.message}</p>
+        </Dialog>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div>
             <div>
               <label htmlFor="email-address" className="sr-only">Correo electrónico</label>
               <input
@@ -58,12 +170,18 @@ const Login = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className={`${getInputClasses(emailValidation.isValid, emailValidation.touched)} rounded-t-md`}
                 placeholder="Correo electrónico institucional"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
               />
             </div>
+            {emailValidation.touched && !emailValidation.isValid && (
+              <p className="text-xs text-red-600 mt-1">{emailValidation.message}</p>
+            )}
+          </div>
+
+          <div>
             <div>
               <label htmlFor="password" className="sr-only">Contraseña</label>
               <input
@@ -72,19 +190,40 @@ const Login = () => {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className={`${getInputClasses(passwordValidation.isValid, passwordValidation.touched)} rounded-b-md`}
                 placeholder="Contraseña"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handlePasswordChange}
+                onFocus={() => setShowPasswordRequirements(true)}
               />
             </div>
           </div>
 
+          {/* Mostrar requisitos de contraseña si es necesario */}
+          {showPasswordRequirements && (
+            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+              <p className="font-medium mb-1">Requisitos de contraseña:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li className={password.length >= 8 ? "text-green-600" : ""}>Al menos 8 caracteres</li>
+                <li className={/[A-Z]/.test(password) ? "text-green-600" : ""}>Al menos una letra mayúscula</li>
+                <li className={/[a-z]/.test(password) ? "text-green-600" : ""}>Al menos una letra minúscula</li>
+                <li className={/[0-9]/.test(password) ? "text-green-600" : ""}>Al menos un número</li>
+                <li className={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? "text-green-600" : ""}>
+                  Al menos un carácter especial
+                </li>
+              </ul>
+            </div>
+          )}
+
           <div>
             <button
               type="submit"
-              disabled={loading}
-              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white ${loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out`}
+              disabled={loading || (emailValidation.touched && !emailValidation.isValid)}
+              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                loading || (emailValidation.touched && !emailValidation.isValid) 
+                  ? 'bg-indigo-400 cursor-not-allowed' 
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out`}
             >
               {loading ? (
                 <>
@@ -109,10 +248,6 @@ const Login = () => {
             </button>
           </div>
           
-          <div className="text-center text-xs text-gray-600">
-            <p>Esta plataforma es exclusiva para miembros de la institución.</p>
-            <p className="mt-1">Si tiene problemas para acceder, contacte al administrador del sistema.</p>
-          </div>
         </form>
       </div>
     </div>

@@ -1,13 +1,39 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import Alert from '../../components/alert';
+import Dialog from '../../components/dialog';
 
 const UsersList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
+  
+  // Estado para alertas
+  const [alertConfig, setAlertConfig] = useState({
+    type: 'error',
+    message: '',
+    isVisible: false
+  });
+
+  // Estado para diálogo de confirmación
+  const [dialogConfig, setDialogConfig] = useState({
+    isOpen: false,
+    userId: null,
+    title: '',
+    message: '',
+  });
+
+  // Función para mostrar alertas
+  const showAlert = (type, message, duration = 5000) => {
+    setAlertConfig({ type, message, isVisible: true, duration });
+  };
+
+  // Función para cerrar alertas
+  const closeAlert = () => {
+    setAlertConfig(prev => ({ ...prev, isVisible: false }));
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -15,7 +41,7 @@ const UsersList = () => {
         const response = await api.getUsers();
         setUsers(response.data);
       } catch (err) {
-        setError('Error al cargar usuarios');
+        showAlert('error', 'Error al cargar usuarios');
         console.error(err);
       } finally {
         setLoading(false);
@@ -25,15 +51,32 @@ const UsersList = () => {
     fetchUsers();
   }, []);
 
-  const handleDelete = async (userId) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este usuario? Esta acción no se puede deshacer.')) {
-      try {
-        await api.deleteUser(userId);
-        setUsers(users.filter(user => user.id !== userId));
-      } catch (err) {
-        setError('Error al eliminar usuario');
-        console.error(err);
-      }
+  // Abrir diálogo de confirmación de eliminación
+  const confirmDelete = (userId, userName) => {
+    setDialogConfig({
+      isOpen: true,
+      userId,
+      title: 'Eliminar Usuario',
+      message: `¿Está seguro de que desea eliminar al usuario "${userName}"? Esta acción no se puede deshacer.`,
+    });
+  };
+
+  // Función para cerrar el diálogo sin acción
+  const closeDialog = () => {
+    setDialogConfig({ ...dialogConfig, isOpen: false });
+  };
+
+  // Función para ejecutar la eliminación del usuario
+  const handleConfirmDelete = async () => {
+    try {
+      await api.deleteUser(dialogConfig.userId);
+      setUsers(users.filter(user => user.id !== dialogConfig.userId));
+      showAlert('success', 'Usuario eliminado correctamente');
+      closeDialog();
+    } catch (err) {
+      showAlert('error', 'Error al eliminar usuario');
+      console.error(err);
+      closeDialog();
     }
   };
 
@@ -79,20 +122,27 @@ const UsersList = () => {
         </Link>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 text-red-800 p-4 mb-6" role="alert">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-red-800 font-medium">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Componente de alerta */}
+      <Alert 
+        type={alertConfig.type}
+        message={alertConfig.message}
+        isVisible={alertConfig.isVisible}
+        onClose={closeAlert}
+        autoHideDuration={alertConfig.duration || 5000}
+      />
+
+      {/* Componente de diálogo */}
+      <Dialog
+        isOpen={dialogConfig.isOpen}
+        onClose={closeDialog}
+        title={dialogConfig.title}
+        onConfirm={handleConfirmDelete}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        type="error"
+      >
+        <p>{dialogConfig.message}</p>
+      </Dialog>
 
       <div className="bg-white shadow-sm overflow-hidden rounded-lg border border-gray-100">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
@@ -191,7 +241,7 @@ const UsersList = () => {
                         Editar
                       </Link>
                       <button 
-                        onClick={() => handleDelete(user.id)} 
+                        onClick={() => confirmDelete(user.id, user.name)} 
                         className="text-red-700 hover:text-red-900 hover:underline focus:outline-none"
                       >
                         Eliminar

@@ -1,12 +1,14 @@
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
+const { 
+  isValidName, 
+  isValidEmail, 
+  isStrongPassword, 
+  isValidRole,
+  sanitizeInput 
+} = require('../utils/validation');
 
 const prisma = new PrismaClient();
-
-// Validar email institucional
-const isValidInstitutionalEmail = (email) => {
-  return email.endsWith('@uni.edu.ec');
-};
 
 // Obtener todos los usuarios
 const getUsers = async (req, res) => {
@@ -66,19 +68,44 @@ const getUserById = async (req, res) => {
 // Crear un nuevo usuario
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    // Sanitizar entradas
+    const name = sanitizeInput(req.body.name);
+    const email = sanitizeInput(req.body.email);
+    const password = req.body.password; // No sanitizamos password para no afectar caracteres especiales válidos
+    const role = req.body.role;
 
     // Validar campos requeridos
     if (!name || !email || !password) {
       return res.status(400).json({ status: 'error', message: 'Todos los campos son requeridos' });
     }
 
-    // Validar email institucional
-    if (!isValidInstitutionalEmail(email)) {
-      return res.status(400).json({ 
-        status: 'error', 
-        message: 'El correo debe ser institucional (@uni.edu.ec)' 
+    // Validar nombre
+    const nameValidation = isValidName(name);
+    if (!nameValidation.isValid) {
+      return res.status(400).json({ status: 'error', message: nameValidation.message });
+    }
+
+    // Validar email
+    const emailValidation = isValidEmail(email);
+    if (!emailValidation.isValid) {
+      return res.status(400).json({ status: 'error', message: emailValidation.message });
+    }
+    
+    // Validar fortaleza de contraseña
+    const passwordValidation = isStrongPassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        status: 'error',
+        message: passwordValidation.message
       });
+    }
+
+    // Validar rol si se proporciona
+    if (role) {
+      const roleValidation = isValidRole(role);
+      if (!roleValidation.isValid) {
+        return res.status(400).json({ status: 'error', message: roleValidation.message });
+      }
     }
 
     // Verificar si el usuario ya existe
@@ -126,7 +153,12 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password, role } = req.body;
+    
+    // Sanitizar entradas
+    const name = req.body.name ? sanitizeInput(req.body.name) : undefined;
+    const email = req.body.email ? sanitizeInput(req.body.email) : undefined;
+    const password = req.body.password; // No sanitizamos password
+    const role = req.body.role;
 
     // Verificar si el usuario existe
     const userExists = await prisma.user.findUnique({
@@ -137,12 +169,26 @@ const updateUser = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
     }
 
-    // Validar email institucional si se proporciona
-    if (email && !isValidInstitutionalEmail(email)) {
-      return res.status(400).json({ 
-        status: 'error', 
-        message: 'El correo debe ser institucional (@uni.edu.ec)' 
-      });
+    // Validaciones para los campos proporcionados
+    if (name) {
+      const nameValidation = isValidName(name);
+      if (!nameValidation.isValid) {
+        return res.status(400).json({ status: 'error', message: nameValidation.message });
+      }
+    }
+
+    if (email) {
+      const emailValidation = isValidEmail(email);
+      if (!emailValidation.isValid) {
+        return res.status(400).json({ status: 'error', message: emailValidation.message });
+      }
+    }
+
+    if (role) {
+      const roleValidation = isValidRole(role);
+      if (!roleValidation.isValid) {
+        return res.status(400).json({ status: 'error', message: roleValidation.message });
+      }
     }
 
     // Preparar datos para actualización
@@ -153,6 +199,15 @@ const updateUser = async (req, res) => {
     
     // Actualizar contraseña si se proporciona
     if (password) {
+      // Validar fortaleza de contraseña
+      const passwordValidation = isStrongPassword(password);
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({
+          status: 'error',
+          message: passwordValidation.message
+        });
+      }
+      
       const salt = await bcrypt.genSalt(10);
       updateData.password = await bcrypt.hash(password, salt);
     }
