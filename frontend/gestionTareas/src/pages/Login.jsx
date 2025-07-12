@@ -8,7 +8,6 @@ import Dialog from '../components/dialog';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const { login, loading } = useAuth();
   const navigate = useNavigate();
   
@@ -60,7 +59,6 @@ const Login = () => {
     setDialogConfig({ ...dialogConfig, isOpen: false });
   };
 
-
   const handleEmailChange = (e) => {
     const value = sanitizeInput(e.target.value);
     setEmail(value);
@@ -74,7 +72,6 @@ const Login = () => {
   const handlePasswordChange = (e) => {
     const value = e.target.value;
     setPassword(value);
-    setShowPasswordRequirements(true);
     
     if (value) {
       const validation = validatePassword(value);
@@ -108,10 +105,6 @@ const Login = () => {
         navigate('/dashboard');
       }, 500);
     } catch (err) {
-      // Si el error es de credenciales inválidas, podría ser por no cumplir requisitos
-      if (err.message?.includes('Credenciales inválidas')) {
-        setShowPasswordRequirements(true);
-      }
       showAlert('error', err.message || 'Error al iniciar sesión');
     }
   };
@@ -194,26 +187,12 @@ const Login = () => {
                 placeholder="Contraseña"
                 value={password}
                 onChange={handlePasswordChange}
-                onFocus={() => setShowPasswordRequirements(true)}
               />
             </div>
+            {passwordValidation.touched && !passwordValidation.isValid && (
+              <p className="text-xs text-red-600 mt-1">{passwordValidation.message}</p>
+            )}
           </div>
-
-          {/* Mostrar requisitos de contraseña si es necesario */}
-          {showPasswordRequirements && (
-            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-              <p className="font-medium mb-1">Requisitos de contraseña:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li className={password.length >= 8 ? "text-green-600" : ""}>Al menos 8 caracteres</li>
-                <li className={/[A-Z]/.test(password) ? "text-green-600" : ""}>Al menos una letra mayúscula</li>
-                <li className={/[a-z]/.test(password) ? "text-green-600" : ""}>Al menos una letra minúscula</li>
-                <li className={/[0-9]/.test(password) ? "text-green-600" : ""}>Al menos un número</li>
-                <li className={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? "text-green-600" : ""}>
-                  Al menos un carácter especial
-                </li>
-              </ul>
-            </div>
-          )}
 
           <div>
             <button
@@ -252,6 +231,6 @@ const Login = () => {
       </div>
     </div>
   );
-};
+}; 
 
 export default Login;
