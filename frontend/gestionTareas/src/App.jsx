@@ -12,6 +12,7 @@ import CursoForm from './pages/cursos/CursoForm';
 import AsignaturasList from './pages/asignaturas/AsignaturasList';
 import AsignaturaForm from './pages/asignaturas/AsignaturaForm';
 import './App.css';
+import TareaDocenteForm from './pages/docente/TareaDocenteForm';
 
 function App() {
   return (
@@ -87,9 +88,14 @@ function App() {
               <TareasDocente />
             </AdminLayout>
           } />
+          <Route path="/docente/tareas/nueva" element={
+            <AdminLayout>
+              <TareaDocenteForm />
+            </AdminLayout>
+          } />
         </Route>
         
-        {/* Redirección por defecto */}
+        {/* Redirección por defecto */XMLDocument}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </AuthProvider>

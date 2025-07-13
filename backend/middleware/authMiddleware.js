@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
 const { getFullName } = require('../utils/validation');
-const prisma = new PrismaClient();
+const prisma = require('../utils/prismaClient');
 
 const protect = async (req, res, next) => {
   let token;
@@ -29,12 +28,10 @@ const protect = async (req, res, next) => {
       next();
     } catch (error) {
       console.error(error);
-      res.status(401).json({ status: 'error', message: 'No autorizado, token inválido' });
+      return res.status(401).json({ status: 'error', message: 'No autorizado, token inválido' });
     }
-  }
-
-  if (!token) {
-    res.status(401).json({ status: 'error', message: 'No autorizado, no se proporcionó token' });
+  } else if (!token) {
+    return res.status(401).json({ status: 'error', message: 'No autorizado, no se proporcionó token' });
   }
 };
 
@@ -49,5 +46,6 @@ const authorize = (...roles) => {
     next();
   };
 };
+
 
 module.exports = { protect, authorize };

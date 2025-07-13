@@ -3,7 +3,6 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { docenteOnly } = require('../middleware/docenteMiddleware');
 const docenteController = require('../controllers/docenteController');
-const userController = require('../controllers/userController');
 
 // Proteger todas las rutas y permitir solo a docentes
 router.use(protect);

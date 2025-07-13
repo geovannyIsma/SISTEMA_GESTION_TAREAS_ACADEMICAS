@@ -3,10 +3,10 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
-const docenteRoutes = require('./routes/docenteRouthes');
+const docenteRoutes = require('./routes/docenteRoutes');
 const estudianteRoutes = require('./routes/estudianteRoutes');
 const cursoRoutes = require('./routes/cursoRoutes');
-const asignaturaRoutes = require('./routes/asignaturaRoutes'); // <-- Añadir esta línea
+const asignaturaRoutes = require('./routes/asignaturaRoutes');
 
 // Cargar variables de entorno
 dotenv.config();
@@ -24,7 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/docente', docenteRoutes);
 app.use('/api/estudiante', estudianteRoutes);
 app.use('/api/cursos', cursoRoutes);
-app.use('/api/asignaturas', asignaturaRoutes); // <-- Añadir esta línea
+app.use('/api/asignaturas', asignaturaRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {

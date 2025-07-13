@@ -1,11 +1,30 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
 
+// Función para formatear fechas en formato legible
+const formatDate = (dateString) => {
+  if (!dateString) return 'Sin fecha';
+  
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Fecha inválida';
+  
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 const TareasDocente = () => {
   const [tareas, setTareas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterEstado, setFilterEstado] = useState('');
   
   // Estado para alertas
   const [alertConfig, setAlertConfig] = useState({
@@ -14,42 +33,13 @@ const TareasDocente = () => {
     isVisible: false
   });
 
-  // Estado para diálogos
+  // Estado para diálogo de confirmación
   const [dialogConfig, setDialogConfig] = useState({
     isOpen: false,
-    type: 'warning',
+    tareaId: null,
     title: '',
     message: '',
-    action: null,
-    tareaId: null
   });
-
-  // Formulario de nueva tarea
-  const [form, setForm] = useState({
-    titulo: '',
-    descripcion: '',
-    fechaEntrega: '',
-    archivo: null,
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const fileInputRef = useRef();
-
-  // Estado para edición y asignación
-  const [editId, setEditId] = useState(null);
-  const [assignId, setAssignId] = useState(null);
-  const [assignData, setAssignData] = useState({ cursoId: '', estudianteId: '' });
-  const [assigning, setAssigning] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-
-  // Para búsqueda y selección de estudiantes
-  const [allStudents, setAllStudents] = useState([]);
-  const [studentQuery, setStudentQuery] = useState('');
-  const [filteredStudents, setFilteredStudents] = useState([]);
-  const [assigningTo, setAssigningTo] = useState(null);
-
-  useEffect(() => {
-    fetchTareas();
-  }, []);
 
   // Función para mostrar alertas
   const showAlert = (type, message, duration = 5000) => {
@@ -61,236 +51,110 @@ const TareasDocente = () => {
     setAlertConfig(prev => ({ ...prev, isVisible: false }));
   };
 
-  // Función para mostrar diálogo
-  const showDialog = (type, title, message, action, tareaId = null) => {
+  useEffect(() => {
+    const fetchTareas = async () => {
+      try {
+        const response = await api.listarTareasDocente();
+        setTareas(response.data);
+      } catch (err) {
+        showAlert('error', 'Error al cargar las tareas');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTareas();
+  }, []);
+
+  // Abrir diálogo de confirmación de eliminación
+  const confirmDelete = (tareaId, tareaTitulo) => {
     setDialogConfig({
       isOpen: true,
-      type,
-      title,
-      message,
-      action,
-      tareaId
+      tareaId,
+      title: 'Deshabilitar Tarea',
+      message: `¿Está seguro de que desea deshabilitar la tarea "${tareaTitulo}"? Los estudiantes no podrán verla.`,
     });
   };
 
-  // Función para cerrar diálogo
+  // Función para cerrar el diálogo sin acción
   const closeDialog = () => {
     setDialogConfig({ ...dialogConfig, isOpen: false });
   };
 
-  // Ejecutar acción al confirmar diálogo
-  const handleDialogConfirm = async () => {
-    const { action, tareaId } = dialogConfig;
-    closeDialog();
-
-    if (action === 'disable') {
-      await disableTarea(tareaId);
-    } else if (action === 'enable') {
-      await enableTarea(tareaId);
-    }
-  };
-
-  const fetchTareas = async () => {
-    setLoading(true);
+  // Función para ejecutar la deshabilitación de la tarea
+  const handleConfirmDelete = async () => {
     try {
-      const res = await api.listarTareasDocente();
-      setTareas(res.data);
-    } catch (err) {
-      showAlert('error', 'Error al cargar tareas');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === 'archivo') {
-      setForm({ ...form, archivo: files[0] });
-    } else {
-      setForm({ ...form, [name]: value });
-    }
-  };
-
-  const handleReset = () => {
-    setForm({
-      titulo: '',
-      descripcion: '',
-      fechaEntrega: '',
-      archivo: null,
-    });
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-
-    if (!form.titulo || !form.descripcion || !form.fechaEntrega) {
-      showAlert('error', 'Todos los campos son obligatorios');
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      // Adjuntos: simula subida, solo envía nombre (backend real debe aceptar archivos)
-      let archivoUrl = '';
-      if (form.archivo) {
-        // Aquí deberías subir el archivo a un endpoint y obtener la URL
-        // Por ahora solo guardamos el nombre
-        archivoUrl = form.archivo.name;
-      }
-
-      await api.crearTarea({
-        titulo: form.titulo,
-        descripcion: form.descripcion,
-        fechaEntrega: form.fechaEntrega,
-        archivoUrl, // En backend real, guarda la URL del archivo subido
-      });
-
-      showAlert('success', 'Tarea creada exitosamente');
-      handleReset();
-      fetchTareas();
-    } catch (err) {
-      showAlert('error', 'Error al crear tarea');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Asignar tarea a curso o estudiante
-  const handleAssign = (tareaId) => {
-    setAssignId(tareaId);
-    setAssignData({ cursoId: '', estudianteId: '' });
-  };
-
-  const submitAssign = async (e) => {
-    e.preventDefault();
-    setAssigning(true);
-    try {
-      if (!assignData.cursoId && !assignData.estudianteId) {
-        showAlert('error', 'Debe ingresar un curso o estudiante');
-        setAssigning(false);
-        return;
-      }
-      await api.asignarTarea(assignId, assignData);
-      setAssignId(null);
-      fetchTareas();
-      showAlert('success', 'Tarea asignada exitosamente');
-    } catch (err) {
-      showAlert('error', 'Error al asignar tarea');
-    } finally {
-      setAssigning(false);
-    }
-  };
-
-  // Editar tarea (solo si editable)
-  const handleEdit = (tarea) => {
-    setEditId(tarea.id);
-    setForm({
-      titulo: tarea.titulo,
-      descripcion: tarea.descripcion,
-      fechaEntrega: tarea.fechaEntrega.split('T')[0],
-      archivo: null,
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Confirmar deshabilitar tarea
-  const confirmDisable = (id) => {
-    const tarea = tareas.find(t => t.id === id);
-    if (!tarea) return;
-
-    showDialog(
-      'warning',
-      'Deshabilitar Tarea',
-      `¿Está seguro de que desea deshabilitar la tarea "${tarea.titulo}"? Los estudiantes no podrán verla.`,
-      'disable',
-      id
-    );
-  };
-
-  // Deshabilitar tarea
-  const disableTarea = async (id) => {
-    setDeletingId(id);
-    try {
-      await api.deshabilitarTarea(id);
-      await fetchTareas();
-      showAlert('success', 'Tarea deshabilitada exitosamente');
+      await api.deshabilitarTarea(dialogConfig.tareaId);
+      setTareas(tareas.map(tarea => 
+        tarea.id === dialogConfig.tareaId 
+          ? {...tarea, habilitada: false}
+          : tarea
+      ));
+      showAlert('success', 'Tarea deshabilitada correctamente');
+      closeDialog();
     } catch (err) {
       showAlert('error', 'Error al deshabilitar tarea');
-    } finally {
-      setDeletingId(null);
+      console.error(err);
+      closeDialog();
     }
   };
 
-  // Confirmar habilitar tarea
-  const confirmEnable = (id) => {
-    const tarea = tareas.find(t => t.id === id);
-    if (!tarea) return;
+  // Filtrar tareas según términos de búsqueda y estado
+  const filteredTareas = tareas.filter(tarea => {
+    const matchesSearch = tarea.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         tarea.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesEstado = filterEstado === '' ? true : 
+                         (filterEstado === 'true' ? tarea.habilitada : !tarea.habilitada);
+    return matchesSearch && matchesEstado;
+  });
 
-    showDialog(
-      'question',
-      'Habilitar Tarea',
-      `¿Está seguro de que desea habilitar la tarea "${tarea.titulo}"? Los estudiantes podrán verla nuevamente.`,
-      'enable',
-      id
-    );
+  // Obtener clase de estado (para las etiquetas visuales)
+  const getEstadoClass = (fechaEntrega, habilitada) => {
+    if (!habilitada) return "bg-gray-100 text-gray-800"; // Deshabilitada
+    
+    const hoy = new Date();
+    const fecha = new Date(fechaEntrega);
+    
+    if (fecha < hoy) return "bg-red-100 text-red-800"; // Vencida
+    
+    // Calcular días restantes
+    const diasRestantes = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+    
+    if (diasRestantes <= 3) return "bg-orange-100 text-orange-800"; // Próxima a vencer
+    return "bg-green-100 text-green-800"; // Con tiempo
   };
 
-  // Habilitar tarea
-  const enableTarea = async (id) => {
-    setDeletingId(id);
-    try {
-      await api.editarTarea(id, { habilitada: true });
-      await fetchTareas();
-      showAlert('success', 'Tarea habilitada exitosamente');
-    } catch (err) {
-      showAlert('error', 'Error al habilitar tarea');
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  // Cargar todos los estudiantes al abrir el modal de asignar
-  useEffect(() => {
-    if (assignId) {
-      api.listarEstudiantesDocente().then(res => {
-        setAllStudents(res.data);
-        setFilteredStudents(res.data);
-      });
-      setStudentQuery('');
-      setAssigningTo(null);
-    }
-    // eslint-disable-next-line
-  }, [assignId]);
-
-  // Filtrar estudiantes en backend
-  const handleStudentFilter = async (value) => {
-    setStudentQuery(value);
-    const res = await api.listarEstudiantesDocente(value);
-    setFilteredStudents(res.data);
-  };
-
-  // Asignar tarea a estudiante seleccionado
-  const handleAssignStudent = async (estudianteId) => {
-    setAssigningTo(estudianteId);
-    setAssigning(true);
-    try {
-      await api.asignarTarea(assignId, { estudianteId });
-      setAssignId(null);
-      fetchTareas();
-      showAlert('success', 'Tarea asignada al estudiante exitosamente');
-    } catch (err) {
-      showAlert('error', 'Error al asignar tarea al estudiante');
-    } finally {
-      setAssigning(false);
-      setAssigningTo(null);
-    }
+  // Obtener texto de estado
+  const getEstadoText = (fechaEntrega, habilitada) => {
+    if (!habilitada) return "Deshabilitada";
+    
+    const hoy = new Date();
+    const fecha = new Date(fechaEntrega);
+    
+    if (fecha < hoy) return "Vencida";
+    
+    // Calcular días restantes
+    const diasRestantes = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+    
+    if (diasRestantes <= 3) return `${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}`;
+    return "Con tiempo";
   };
 
   return (
     <div className="py-6">
-      <h1 className="text-2xl font-bold mb-4">Mis Tareas</h1>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Mis Tareas</h1>
+        <Link 
+          to="/docente/tareas/nueva"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          Crear Nueva Tarea
+        </Link>
+      </div>
 
       {/* Componente de alerta */}
       <Alert 
@@ -306,240 +170,155 @@ const TareasDocente = () => {
         isOpen={dialogConfig.isOpen}
         onClose={closeDialog}
         title={dialogConfig.title}
-        type={dialogConfig.type}
-        onConfirm={handleDialogConfirm}
-        confirmText="Confirmar"
+        onConfirm={handleConfirmDelete}
+        confirmText="Deshabilitar"
         cancelText="Cancelar"
+        type="warning"
       >
         <p>{dialogConfig.message}</p>
       </Dialog>
 
-      {/* Formulario para crear tarea */}
-      <div className="bg-white rounded shadow p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-4">Crear nueva tarea</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Título</label>
-            <input
-              type="text"
-              name="titulo"
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-              value={form.titulo}
-              onChange={handleInputChange}
-              required
-            />
+      <div className="bg-white shadow-sm overflow-hidden rounded-lg border border-gray-100">
+        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div className="w-full md:w-1/3">
+              <label htmlFor="search" className="sr-only">Buscar</label>
+              <div className="relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  id="search"
+                  placeholder="Buscar por título o descripción"
+                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="w-full md:w-1/5">
+              <label htmlFor="estado" className="sr-only">Filtrar por estado</label>
+              <select
+                id="estado"
+                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                value={filterEstado}
+                onChange={(e) => setFilterEstado(e.target.value)}
+              >
+                <option value="">Todas las tareas</option>
+                <option value="true">Habilitadas</option>
+                <option value="false">Deshabilitadas</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Descripción</label>
-            <textarea
-              name="descripcion"
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-              rows={3}
-              value={form.descripcion}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Fecha límite</label>
-            <input
-              type="date"
-              name="fechaEntrega"
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-              value={form.fechaEntrega}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Archivo adjunto</label>
-            <input
-              type="file"
-              name="archivo"
-              ref={fileInputRef}
-              className="mt-1 block w-full"
-              onChange={handleInputChange}
-              accept="*"
-            />
-            {form.archivo && (
-              <div className="text-xs text-gray-500 mt-1">Archivo seleccionado: {form.archivo.name}</div>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
-            >
-              {submitting ? 'Creando...' : 'Crear tarea'}
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition"
-              disabled={submitting}
-            >
-              Limpiar
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
 
-      {/* Tabla de tareas */}
-      {loading ? (
-        <div>Cargando...</div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white rounded shadow divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Título</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Descripción</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Fecha Límite</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r">Archivo</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {tareas.map((t) => (
-                <tr key={t.id} className={t.habilitada === false ? "bg-gray-100 text-gray-400" : ""}>
-                  <td className="px-6 py-4 border-r align-top">{t.titulo}</td>
-                  <td className="px-6 py-4 border-r align-top">{t.descripcion}</td>
-                  <td className="px-6 py-4 border-r align-top">{new Date(t.fechaEntrega).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 border-r align-top">
-                    {t.archivoUrl ? (
-                      <a
-                        href={t.archivoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 underline"
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Título
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Fecha de Entrega
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Material
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredTareas.map((tarea) => (
+                  <tr key={tarea.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{tarea.titulo}</div>
+                      {tarea.descripcion && (
+                        <div className="text-xs text-gray-500 truncate max-w-xs">
+                          {tarea.descripcion.length > 100 ? 
+                            `${tarea.descripcion.substring(0, 100)}...` : 
+                            tarea.descripcion}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{formatDate(tarea.fechaEntrega)}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getEstadoClass(tarea.fechaEntrega, tarea.habilitada)}`}>
+                        {getEstadoText(tarea.fechaEntrega, tarea.habilitada)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {tarea.archivoUrl ? (
+                        <a 
+                          href={tarea.archivoUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="text-indigo-600 hover:text-indigo-900 font-medium"
+                        >
+                          Ver material
+                        </a>
+                      ) : (
+                        <span className="text-gray-500">Sin material</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Link 
+                        to={`/docente/tareas/${tarea.id}`} 
+                        className="text-indigo-700 hover:text-indigo-900 mr-4 hover:underline"
                       >
-                        Ver archivo
-                      </a>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 align-top">
-                    <div className="flex flex-col items-stretch gap-2">
-                      <button
-                        className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
-                        onClick={() => handleAssign(t.id)}
-                        disabled={t.habilitada === false}
+                        Editar
+                      </Link>
+                      <Link 
+                        to={`/docente/tareas/${tarea.id}/asignar`} 
+                        className="text-blue-700 hover:text-blue-900 mr-4 hover:underline"
                       >
                         Asignar
-                      </button>
-                      {t.editable !== false && (
-                        <button
-                          className="bg-yellow-500 text-white px-3 py-1 rounded text-xs hover:bg-yellow-600"
-                          onClick={() => handleEdit(t)}
-                          disabled={t.habilitada === false}
+                      </Link>
+                      {tarea.habilitada && (
+                        <button 
+                          onClick={() => confirmDelete(tarea.id, tarea.titulo)} 
+                          className="text-red-700 hover:text-red-900 hover:underline focus:outline-none"
                         >
-                          Editar
+                          Deshabilitar
                         </button>
                       )}
-                      <button
-                        className="bg-gray-500 text-white px-3 py-1 rounded text-xs hover:bg-gray-600"
-                        onClick={() => confirmDisable(t.id)}
-                        disabled={deletingId === t.id || t.habilitada === false}
-                      >
-                        {t.habilitada === false
-                          ? 'Deshabilitada'
-                          : (deletingId === t.id ? 'Deshabilitando...' : 'Deshabilitar')}
-                      </button>
-                      <button
-                        className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600"
-                        onClick={() => confirmEnable(t.id)}
-                        disabled={deletingId === t.id || t.habilitada === true}
-                      >
-                        {t.habilitada === true
-                          ? 'Habilitada'
-                          : (deletingId === t.id ? 'Habilitando...' : 'Habilitar')}
-                      </button>
-                      {t.editable === false && (
-                        <span className="text-xs text-gray-400 text-center">Solo lectura</span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {tareas.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="text-center py-4 text-gray-500">No hay tareas</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Modal o sección para asignar tarea */}
-      {assignId && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl">
-            <h3 className="text-lg font-semibold mb-4">Asignar tarea a estudiante</h3>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Buscar estudiante por nombre o correo</label>
-              <input
-                type="text"
-                className="block w-full border border-gray-300 rounded px-3 py-2"
-                value={studentQuery}
-                onChange={e => handleStudentFilter(e.target.value)}
-                placeholder="Ej: Juan Pérez"
-                autoComplete="off"
-              />
-            </div>
-            <div className="overflow-x-auto max-h-72">
-              <table className="min-w-full bg-white rounded shadow divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Nombre</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r">Correo</th>
-                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Acción</th>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredStudents.map(est => (
-                    <tr key={est.id}>
-                      <td className="px-4 py-2 border-r">{est.name}</td>
-                      <td className="px-4 py-2 border-r">{est.email}</td>
-                      <td className="px-4 py-2 text-center">
-                        <button
-                          className="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700"
-                          onClick={() => handleAssignStudent(est.id)}
-                          disabled={assigning && assigningTo === est.id}
-                        >
-                          {assigning && assigningTo === est.id ? 'Asignando...' : 'Asignar'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredStudents.length === 0 && (
-                    <tr>
-                      <td colSpan={3} className="text-center py-4 text-gray-500">No se encontraron estudiantes</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex gap-3 mt-4 justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setAssignId(null);
-                  setStudentQuery('');
-                  setFilteredStudents([]);
-                  setAssignData({ cursoId: '', estudianteId: '' });
-                }}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-                disabled={assigning}
-              >
-                Cancelar
-              </button>
-            </div>
+                ))}
+                
+                {filteredTareas.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-12 text-center text-gray-600">
+                      <div className="flex flex-col items-center justify-center">
+                        <svg className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                        <p className="text-lg font-medium text-gray-700">No se encontraron tareas</p>
+                        <p className="text-sm text-gray-500 mt-1">Pruebe con otros criterios de búsqueda o añada una nueva tarea</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

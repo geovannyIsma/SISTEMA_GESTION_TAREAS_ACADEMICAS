@@ -74,7 +74,7 @@ docker-compose down -v
 ### Endpoints de autenticación
 
 - **POST /api/auth/register**: Registrar un nuevo usuario (solo administradores)
-  - Body: `{ name, email, password, role }`
+  - Body: `{ firstName, lastName, email, password, role }`
   
 - **POST /api/auth/login**: Iniciar sesión
   - Body: `{ email, password }`
@@ -87,9 +87,9 @@ docker-compose down -v
 - **GET /api/users**: Obtener todos los usuarios
 - **GET /api/users/:id**: Obtener usuario por ID
 - **POST /api/users**: Crear nuevo usuario
-  - Body: `{ name, email, password, role }`
+  - Body: `{ firstName, lastName, email, password, role }`
 - **PUT /api/users/:id**: Actualizar usuario
-  - Body: `{ name?, email?, password?, role? }`
+  - Body: `{ firstName?, lastName?, email?, password?, role? }`
 - **DELETE /api/users/:id**: Eliminar usuario
 
 ### Roles del sistema
@@ -104,4 +104,20 @@ docker-compose down -v
 Para rutas protegidas, incluye en los headers:
 ```
 Authorization: Bearer tu_token_jwt
+```
+
+## Estructura del Proyecto Optimizada
+
+```
+backend/
+├── controllers/       # Controladores de la aplicación
+├── middleware/        # Middleware personalizado
+├── prisma/            # Modelos y migraciones de Prisma
+├── routes/            # Definición de rutas
+├── scripts/           # Scripts de utilidad
+├── utils/             # Funciones de utilidad
+│   ├── errorHandler.js   # Manejo centralizado de errores
+│   ├── prismaClient.js   # Cliente Prisma singleton
+│   └── validation.js     # Validaciones
+└── server.js          # Punto de entrada de la aplicación
 ```

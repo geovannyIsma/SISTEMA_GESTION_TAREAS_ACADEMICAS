@@ -1,6 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../utils/prismaClient');
 
 async function createAdmin() {
   try {
@@ -49,4 +48,5 @@ async function createAdmin() {
   }
 }
 
+createAdmin();
 createAdmin();

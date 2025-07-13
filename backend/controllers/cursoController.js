@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { sanitizeInput } = require('../utils/validation');
+const { sanitizeInput, getFullName } = require('../utils/validation');
 
 // Obtener todos los cursos con información de docentes y estudiantes
 const getCursos = async (req, res) => {
@@ -11,14 +11,16 @@ const getCursos = async (req, res) => {
         docentes: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             email: true,
           },
         },
         estudiantes: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             email: true,
           },
         },
@@ -34,9 +36,22 @@ const getCursos = async (req, res) => {
       },
     });
 
+    // Add computed name field for backward compatibility
+    const formattedCursos = cursos.map(curso => ({
+      ...curso,
+      docentes: curso.docentes.map(docente => ({
+        ...docente,
+        name: getFullName(docente.firstName, docente.lastName)
+      })),
+      estudiantes: curso.estudiantes.map(estudiante => ({
+        ...estudiante,
+        name: getFullName(estudiante.firstName, estudiante.lastName)
+      }))
+    }));
+
     res.status(200).json({
       status: 'success',
-      data: cursos,
+      data: formattedCursos,
     });
   } catch (error) {
     console.error('Error al obtener cursos:', error);
@@ -56,14 +71,16 @@ const getCursoById = async (req, res) => {
         docentes: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             email: true,
           },
         },
         estudiantes: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             email: true,
           },
         },
@@ -74,9 +91,22 @@ const getCursoById = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Curso no encontrado' });
     }
 
+    // Add computed name field for backward compatibility
+    const formattedCurso = {
+      ...curso,
+      docentes: curso.docentes.map(docente => ({
+        ...docente,
+        name: getFullName(docente.firstName, docente.lastName)
+      })),
+      estudiantes: curso.estudiantes.map(estudiante => ({
+        ...estudiante,
+        name: getFullName(estudiante.firstName, estudiante.lastName)
+      }))
+    };
+
     res.status(200).json({
       status: 'success',
-      data: curso,
+      data: formattedCurso,
     });
   } catch (error) {
     console.error('Error al obtener curso:', error);
