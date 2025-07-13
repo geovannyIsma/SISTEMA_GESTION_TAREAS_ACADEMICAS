@@ -38,7 +38,22 @@ const apiRequest = async (endpoint, method = 'GET', data = null) => {
   }
 };
 
-export const api = {
+// Define métodos HTTP como funciones helper
+const api = {
+  // Métodos HTTP genéricos
+  get: (endpoint, options = {}) => {
+    const params = options.params || {};
+    const queryString = new URLSearchParams(params).toString();
+    const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+    return apiRequest(url);
+  },
+  post: (endpoint, data) => apiRequest(endpoint, 'POST', data),
+  put: (endpoint, data) => apiRequest(endpoint, 'PUT', data),
+  delete: (endpoint, data) => {
+    // Fix the DELETE request by passing the data directly to apiRequest without the "data" wrapper
+    return apiRequest(endpoint, 'DELETE', data);
+  },
+  
   // Autenticación
   login: (credentials) => apiRequest('/auth/login', 'POST', credentials),
   getMe: () => apiRequest('/auth/me'),

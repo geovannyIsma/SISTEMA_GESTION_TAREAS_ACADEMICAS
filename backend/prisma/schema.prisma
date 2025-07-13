@@ -11,6 +11,15 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+// Enumeraciones
+enum Role {
+  ADMINISTRADOR
+  DOCENTE
+  ESTUDIANTE
+  OBSERVADOR
+}
+
 enum Estado {
   PENDIENTE
   EN_PROCESO
@@ -18,27 +27,26 @@ enum Estado {
   CANCELADA
 }
 
+// Modelos
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(ESTUDIANTE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  tareas    Tareas[]
-  tareasDocente Tarea[] @relation("UserTareasDocente")
-  cursos    Curso[] @relation("CursoEstudiantes")
-  asignacionesEstudiante TareaAsignacion[] @relation("AsignacionEstudiante")
-  entregas Entrega[] @relation("EntregaEstudiante")
+  id                      Int                @id @default(autoincrement())
+  name                    String
+  email                   String             @unique
+  password                String
+  role                    Role               @default(ESTUDIANTE)
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  tareas                  Tareas[]
+  tareasDocente           Tarea[]            @relation("UserTareasDocente")
+  cursos                  Curso[]            @relation("CursoEstudiantes")
+  cursosDocente           Curso[]            @relation("CursoDocentes") 
+  asignacionesEstudiante  TareaAsignacion[]  @relation("AsignacionEstudiante")
+  entregas                Entrega[]          @relation("EntregaEstudiante")
+  notificaciones          Notificacion[]
+  retroalimentaciones     Retroalimentacion[]
 }
 
-enum Role {
-  ADMINISTRADOR
-  DOCENTE
-  ESTUDIANTE
-  OBSERVADOR
-}
 model Tareas {
   id          Int      @id @default(autoincrement())
   titulo      String
@@ -50,45 +58,86 @@ model Tareas {
 }
 
 model Curso {
-  id      Int     @id @default(autoincrement())
-  nombre  String
-  // Relación con estudiantes (opcional)
-  estudiantes User[] @relation("CursoEstudiantes")
-  // Relación con asignaciones de tareas
+  id           Int                 @id @default(autoincrement())
+  nombre       String
+  codigo       String              @unique
+  descripcion  String?             @db.Text
+  activo       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  estudiantes  User[]              @relation("CursoEstudiantes")
+  docentes     User[]              @relation("CursoDocentes")
   asignaciones TareaAsignacion[]
 }
 
 model Tarea {
-  id           Int      @id @default(autoincrement())
-  titulo       String
-  descripcion  String
-  fechaEntrega DateTime
-  docenteId    Int
-  docente      User     @relation("UserTareasDocente", fields: [docenteId], references: [id])
-  archivoUrl   String?
-  habilitada   Boolean  @default(true)
-  asignaciones TareaAsignacion[]
-  entregas     Entrega[]
+  id                         Int                  @id @default(autoincrement())
+  titulo                     String
+  descripcion                String
+  fechaEntrega               DateTime
+  docenteId                  Int
+  docente                    User                 @relation("UserTareasDocente", fields: [docenteId], references: [id])
+  archivoUrl                 String?
+  habilitada                 Boolean              @default(true)
+  notaMaxima                 Float                @default(10.0)
+  editableHastaUltimaEntrega Boolean             @default(true)
+
+  asignaciones               TareaAsignacion[]
+  entregas                   Entrega[]
+  retroalimentaciones        Retroalimentacion[]
 }
 
 model TareaAsignacion {
-  id        Int    @id @default(autoincrement())
-  tareaId   Int
-  tarea     Tarea  @relation(fields: [tareaId], references: [id])
-  cursoId   Int?   // Si es grupal
-  curso     Curso? @relation(fields: [cursoId], references: [id])
-  estudianteId Int? // Si es individual
-  estudiante   User? @relation("AsignacionEstudiante", fields: [estudianteId], references: [id])
+  id            Int     @id @default(autoincrement())
+  tareaId       Int
+  tarea         Tarea   @relation(fields: [tareaId], references: [id])
+  cursoId       Int?    // Si es grupal
+  curso         Curso?  @relation(fields: [cursoId], references: [id])
+  estudianteId  Int?    // Si es individual
+  estudiante    User?   @relation("AsignacionEstudiante", fields: [estudianteId], references: [id])
 }
 
 model Entrega {
-  id           Int      @id @default(autoincrement())
-  tareaId      Int
-  tarea        Tarea    @relation(fields: [tareaId], references: [id])
-  estudianteId Int
-  estudiante   User     @relation("EntregaEstudiante", fields: [estudianteId], references: [id])
-  fecha        DateTime @default(now())
-  archivoUrl   String?
-  calificacion Int?
-  observaciones String?
+  id             Int                 @id @default(autoincrement())
+  tareaId        Int
+  tarea          Tarea              @relation(fields: [tareaId], references: [id])
+  estudianteId   Int
+  estudiante     User               @relation("EntregaEstudiante", fields: [estudianteId], references: [id])
+  fecha          DateTime           @default(now())
+  fueraDePlazo   Boolean            @default(false)
+  calificacion   Float?
+  observaciones  String?
+  archivos       ArchivoEntrega[]
+}
+
+model ArchivoEntrega {
+  id         Int      @id @default(autoincrement())
+  entregaId  Int
+  entrega    Entrega  @relation(fields: [entregaId], references: [id])
+  url        String
+  tipo       String   // PDF, ZIP, IMG
+  sizeMB     Float
+}
+
+model Retroalimentacion {
+  id            Int      @id @default(autoincrement())
+  tareaId       Int
+  tarea         Tarea    @relation(fields: [tareaId], references: [id])
+  estudianteId  Int
+  estudiante    User     @relation(fields: [estudianteId], references: [id])
+  nota          Float
+  observacion   String   @db.Text
+  archivoUrl    String?
+  fecha         DateTime @default(now())
+  notificado    Boolean  @default(false)
+}
+
+model Notificacion {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int
+  usuario    User     @relation(fields: [usuarioId], references: [id])
+  mensaje    String
+  leido      Boolean  @default(false)
+  fecha      DateTime @default(now())
+  tipo       String   // NUEVA_TAREA, ENTREGA, RETRO, etc.
 }

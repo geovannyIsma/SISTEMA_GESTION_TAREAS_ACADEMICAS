@@ -3,8 +3,9 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
-const docenteRoutes = require('./routes/docenteRouthes'); // <-- Agrega esta línea
+const docenteRoutes = require('./routes/docenteRouthes');
 const estudianteRoutes = require('./routes/estudianteRoutes');
+const cursoRoutes = require('./routes/cursoRoutes'); // <-- Añadir esta línea
 
 // Cargar variables de entorno
 dotenv.config();
@@ -19,8 +20,9 @@ app.use(express.json());
 // Rutas
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/docente', docenteRoutes); // <-- Agrega esta línea
+app.use('/api/docente', docenteRoutes);
 app.use('/api/estudiante', estudianteRoutes);
+app.use('/api/cursos', cursoRoutes); // <-- Añadir esta línea
 
 // Ruta de prueba
 app.get('/', (req, res) => {

@@ -37,12 +37,20 @@ const Header = ({ toggleSidebar }) => {
           <div className="flex items-center">
             <div className="hidden md:ml-4 md:flex md:items-center">
               {user?.role === 'ADMINISTRADOR' && (
-                <Link
-                  to="/users"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                >
-                  Usuarios
-                </Link>
+                <>
+                  <Link
+                    to="/users"
+                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    Usuarios
+                  </Link>
+                  <Link
+                    to="/cursos"
+                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    Cursos
+                  </Link>
+                </>
               )}
             </div>
 

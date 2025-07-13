@@ -13,7 +13,27 @@ const prisma = new PrismaClient();
 // Obtener todos los usuarios
 const getUsers = async (req, res) => {
   try {
+    // Filtrar por rol si se proporciona en la consulta
+    const { role, search } = req.query;
+    
+    // Construir condición de filtrado
+    let whereCondition = {};
+    
+    // Filtrar por rol si se especifica
+    if (role) {
+      whereCondition.role = role;
+    }
+    
+    // Filtrar por término de búsqueda si se proporciona
+    if (search) {
+      whereCondition.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
     const users = await prisma.user.findMany({
+      where: whereCondition,
       select: {
         id: true,
         name: true,
