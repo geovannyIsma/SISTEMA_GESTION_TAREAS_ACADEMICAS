@@ -9,6 +9,8 @@ import Login from './pages/Login';
 import TareasDocente from './pages/docente/TareasDocente';
 import CursosList from './pages/cursos/CursosList';
 import CursoForm from './pages/cursos/CursoForm';
+import AsignaturasList from './pages/asignaturas/AsignaturasList';
+import AsignaturaForm from './pages/asignaturas/AsignaturaForm';
 import './App.css';
 
 function App() {
@@ -41,6 +43,23 @@ function App() {
             <Route path="/users/:id" element={
               <AdminLayout>
                 <UserForm />
+              </AdminLayout>
+            } />
+            
+            {/* Rutas para gestión de asignaturas (admin) */}
+            <Route path="/asignaturas" element={
+              <AdminLayout>
+                <AsignaturasList />
+              </AdminLayout>
+            } />
+            <Route path="/asignaturas/new" element={
+              <AdminLayout>
+                <AsignaturaForm />
+              </AdminLayout>
+            } />
+            <Route path="/asignaturas/:id" element={
+              <AdminLayout>
+                <AsignaturaForm />
               </AdminLayout>
             } />
             

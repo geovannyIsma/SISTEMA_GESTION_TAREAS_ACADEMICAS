@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { getFullName } from '../utils/validation';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -186,7 +187,7 @@ const Dashboard = () => {
     const tareasHabilitadas = tareas.filter(t => t.habilitada !== false);
     return (
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-2">Bienvenido, {user.name}</h1>
+        <h1 className="text-2xl font-bold mb-2">Bienvenido, {getFullName(user.firstName, user.lastName)}</h1>
         <p className="mb-6 text-gray-700">Estas son tus tareas asignadas:</p>
         {error && <div className="text-red-600 mb-4">{error}</div>}
         {loading ? (
@@ -237,12 +238,12 @@ const Dashboard = () => {
     );
   }
 
-  // ESTUDIANTE: saludo + tabla de tareas asignadas (misma estructura)
+  // ESTUDIANTE: saludo + tabla de tareas asignadas
   if (user && user.role === 'ESTUDIANTE') {
     const tareasHabilitadas = tareas.filter(t => t.habilitada !== false);
     return (
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-2">Bienvenido, {user.name}</h1>
+        <h1 className="text-2xl font-bold mb-2">Bienvenido, {getFullName(user.firstName, user.lastName)}</h1>
         <p className="mb-6 text-gray-700">Estas son tus tareas asignadas:</p>
         {error && <div className="text-red-600 mb-4">{error}</div>}
         {loading ? (
@@ -328,7 +329,7 @@ const Dashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-0">Panel de Administración</h1>
         <div className="text-gray-700">
-          Bienvenido, {user?.name || 'Administrador'}
+          Bienvenido, {user ? getFullName(user.firstName, user.lastName) : 'Administrador'}
         </div>
       </div>
 
@@ -432,10 +433,12 @@ const Dashboard = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold">
-                            {user.name.charAt(0).toUpperCase()}
+                            {user.firstName.charAt(0).toUpperCase()}
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {getFullName(user.firstName, user.lastName)}
+                            </div>
                           </div>
                         </div>
                       </td>

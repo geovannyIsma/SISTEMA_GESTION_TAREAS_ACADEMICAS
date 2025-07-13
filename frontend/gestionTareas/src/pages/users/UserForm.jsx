@@ -11,7 +11,8 @@ const UserForm = () => {
   const isEditMode = Boolean(id);
 
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     role: 'ESTUDIANTE',
@@ -38,7 +39,8 @@ const UserForm = () => {
   
   // Estado para validaciones
   const [validations, setValidations] = useState({
-    name: { isValid: true, message: '', touched: false },
+    firstName: { isValid: true, message: '', touched: false },
+    lastName: { isValid: true, message: '', touched: false },
     email: { isValid: true, message: '', touched: false },
     password: { 
       isValid: false,
@@ -63,7 +65,8 @@ const UserForm = () => {
           
           // Set form data without password
           setFormData({
-            name: userData.name,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
             email: userData.email,
             password: '',
             role: userData.role,
@@ -132,7 +135,8 @@ const UserForm = () => {
     let validation = { isValid: true, message: '', touched: true };
     
     switch (fieldName) {
-      case 'name':
+      case 'firstName':
+      case 'lastName':
         validation = validateName(value);
         break;
       case 'email':
@@ -157,7 +161,8 @@ const UserForm = () => {
     e.preventDefault();
     
     // Validar todos los campos obligatorios
-    const nameIsValid = validateField('name', formData.name);
+    const firstNameIsValid = validateField('firstName', formData.firstName);
+    const lastNameIsValid = validateField('lastName', formData.lastName);
     const emailIsValid = validateField('email', formData.email);
     
     // Solo validar contraseña si es nuevo usuario o si se está cambiando la contraseña
@@ -166,7 +171,7 @@ const UserForm = () => {
       : validateField('password', formData.password);
     
     // Si algún campo no es válido, detener el envío
-    if (!nameIsValid || !emailIsValid || !passwordIsValid) {
+    if (!firstNameIsValid || !lastNameIsValid || !emailIsValid || !passwordIsValid) {
       showAlert('error', 'Por favor, corrija los errores en el formulario antes de continuar');
       return;
     }
@@ -176,8 +181,8 @@ const UserForm = () => {
       'question',
       isEditMode ? 'Actualizar Usuario' : 'Crear Usuario',
       isEditMode 
-        ? `¿Está seguro de que desea actualizar la información de "${formData.name}"?`
-        : `¿Está seguro de que desea crear el usuario "${formData.name}"?`,
+        ? `¿Está seguro de que desea actualizar la información de "${formData.firstName} ${formData.lastName}"?`
+        : `¿Está seguro de que desea crear el usuario "${formData.firstName} ${formData.lastName}"?`,
       'submit'
     );
   };
@@ -197,7 +202,7 @@ const UserForm = () => {
         showAlert('success', 'Usuario actualizado correctamente');
       } else {
         // For new user, all fields are required
-        if (!formData.name || !formData.email || !formData.password) {
+        if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
           throw new Error('Todos los campos son obligatorios');
         }
         await api.createUser(formData);
@@ -285,24 +290,50 @@ const UserForm = () => {
       <div className="bg-white shadow overflow-hidden rounded-lg">
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Nombre completo
-              </label>
-              <input
-                type="text"
-                name="name"
-                id="name"
-                required
-                className={getInputClass('name')}
-                value={formData.name}
-                onChange={handleChange}
-                maxLength={100}
-              />
-              {validations.name.touched && !validations.name.isValid && (
-                <p className="mt-1 text-sm text-red-600">{validations.name.message}</p>
-              )}
-              <p className="mt-1 text-xs text-gray-500">Solo letras, espacios, apóstrofes y guiones permitidos</p>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              {/* First Name Field */}
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  name="firstName"
+                  id="firstName"
+                  required
+                  className={getInputClass('firstName')}
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  maxLength={50}
+                />
+                {validations.firstName.touched && !validations.firstName.isValid && (
+                  <p className="mt-1 text-sm text-red-600">{validations.firstName.message}</p>
+                )}
+              </div>
+              
+              {/* Last Name Field */}
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                  Apellido
+                </label>
+                <input
+                  type="text"
+                  name="lastName"
+                  id="lastName"
+                  required
+                  className={getInputClass('lastName')}
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  maxLength={50}
+                />
+                {validations.lastName.touched && !validations.lastName.isValid && (
+                  <p className="mt-1 text-sm text-red-600">{validations.lastName.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="col-span-2">
+              <p className="text-xs text-gray-500">Solo letras, espacios, apóstrofes y guiones permitidos en el nombre y apellido</p>
             </div>
 
             <div>
@@ -396,10 +427,10 @@ const UserForm = () => {
             <button
               type="submit"
               disabled={submitting || 
-                (!isEditMode && (!validations.name.isValid || !validations.email.isValid || !validations.password.isValid)) ||
+                (!isEditMode && (!validations.firstName.isValid || !validations.lastName.isValid || !validations.email.isValid || !validations.password.isValid)) ||
                 (isEditMode && formData.password && !validations.password.isValid)}
               className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-                submitting || (!isEditMode && (!validations.name.isValid || !validations.email.isValid || !validations.password.isValid)) ||
+                submitting || (!isEditMode && (!validations.firstName.isValid || !validations.lastName.isValid || !validations.email.isValid || !validations.password.isValid)) ||
                 (isEditMode && formData.password && !validations.password.isValid)
                   ? 'bg-indigo-400 cursor-not-allowed'
                   : 'bg-indigo-600 hover:bg-indigo-700'

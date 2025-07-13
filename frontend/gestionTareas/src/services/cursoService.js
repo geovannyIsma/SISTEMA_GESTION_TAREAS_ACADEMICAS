@@ -60,6 +60,31 @@ const getDocentes = async (search = '') => {
   return api.get('/users', { params });
 };
 
+// Obtener todas las asignaturas
+const getAsignaturas = async () => {
+  return api.get('/asignaturas');
+};
+
+// Obtener una asignatura específica por ID
+const getAsignaturaById = async (id) => {
+  return api.get(`/asignaturas/${id}`);
+};
+
+// Crear una nueva asignatura
+const createAsignatura = async (asignaturaData) => {
+  return api.post('/asignaturas', asignaturaData);
+};
+
+// Actualizar una asignatura existente
+const updateAsignatura = async (id, asignaturaData) => {
+  return api.put(`/asignaturas/${id}`, asignaturaData);
+};
+
+// Eliminar una asignatura
+const deleteAsignatura = async (id) => {
+  return api.delete(`/asignaturas/${id}`);
+};
+
 const cursoService = {
   getCursos,
   getCursoById,
@@ -71,7 +96,12 @@ const cursoService = {
   addDocentes,
   removeDocentes,
   getEstudiantes,
-  getDocentes
+  getDocentes,
+  getAsignaturas,
+  getAsignaturaById,
+  createAsignatura,
+  updateAsignatura,
+  deleteAsignatura
 };
 
 export default cursoService;

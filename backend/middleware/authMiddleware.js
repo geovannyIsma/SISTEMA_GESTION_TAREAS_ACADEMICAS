@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
+const { getFullName } = require('../utils/validation');
 const prisma = new PrismaClient();
 
 const protect = async (req, res, next) => {
@@ -14,10 +15,16 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Obtener usuario del token (sin incluir la contraseña)
-      req.user = await prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, name: true, email: true, role: true }
+        select: { id: true, firstName: true, lastName: true, email: true, role: true }
       });
+
+      // Añadir campo name para compatibilidad con el frontend
+      req.user = {
+        ...user,
+        name: getFullName(user.firstName, user.lastName)
+      };
 
       next();
     } catch (error) {

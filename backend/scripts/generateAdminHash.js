@@ -25,7 +25,8 @@ async function createAdmin() {
     // Crear usuario administrador con Prisma
     const admin = await prisma.user.create({
       data: {
-        name: 'Administrador',
+        firstName: 'Admin',
+        lastName: 'Sistema',
         email: 'admin@uni.edu.ec',
         password: hash,
         role: 'ADMINISTRADOR',
@@ -34,7 +35,7 @@ async function createAdmin() {
     
     console.log('Usuario administrador creado exitosamente:');
     console.log(`ID: ${admin.id}`);
-    console.log(`Nombre: ${admin.name}`);
+    console.log(`Nombre: ${admin.firstName} ${admin.lastName}`);
     console.log(`Email: ${admin.email}`);
     console.log(`Role: ${admin.role}`);
     console.log(`\nPuedes iniciar sesión con:`);

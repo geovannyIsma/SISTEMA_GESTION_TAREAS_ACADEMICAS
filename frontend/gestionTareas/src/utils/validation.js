@@ -1,11 +1,11 @@
 /**
- * Utilidades de validación para el frontend
+ * Utilidades de validación para datos de usuario
  */
 
 // Validar nombre (solo permite letras, espacios y algunos caracteres especiales comunes en nombres)
-export const validateName = (name) => {
+const validateName = (name) => {
   if (!name || name.trim().length === 0) {
-    return { isValid: false, message: 'El nombre es obligatorio' };
+    return { isValid: false, message: 'Este campo es obligatorio' };
   }
   
   // Permitir letras, espacios, apóstrofes, guiones, y algunos acentos comunes en español
@@ -14,19 +14,19 @@ export const validateName = (name) => {
   if (!nameRegex.test(name)) {
     return { 
       isValid: false, 
-      message: 'El nombre solo puede contener letras, espacios, apóstrofes y guiones' 
+      message: 'Solo puede contener letras, espacios, apóstrofes y guiones' 
     };
   }
   
-  if (name.length > 100) {
-    return { isValid: false, message: 'El nombre no puede exceder 100 caracteres' };
+  if (name.length > 50) {
+    return { isValid: false, message: 'No puede exceder 50 caracteres' };
   }
   
   return { isValid: true, message: 'Nombre válido' };
 };
 
 // Validar email institucional con formato correcto
-export const validateEmail = (email) => {
+const validateEmail = (email) => {
   if (!email || email.trim().length === 0) {
     return { isValid: false, message: 'El correo electrónico es obligatorio' };
   }
@@ -53,59 +53,82 @@ export const validateEmail = (email) => {
 };
 
 // Validar fortaleza de contraseña
-export const validatePassword = (password) => {
+const validatePassword = (password) => {
+  const result = {
+    isValid: true,
+    minLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+    message: ''
+  };
+  
+  // Si es un string vacío (para campos opcionales como al editar)
   if (!password) {
-    return { isValid: false, message: 'La contraseña es obligatoria' };
+    result.isValid = false;
+    result.message = 'La contraseña es obligatoria';
+    return result;
   }
   
-  const minLength = password.length >= 8;
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-  const notTooLong = password.length <= 100;
+  // Validar longitud mínima
+  result.minLength = password.length >= 8;
   
-  const isValid = minLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar && notTooLong;
+  // Validar mayúsculas
+  result.hasUpperCase = /[A-Z]/.test(password);
   
-  let message = 'Contraseña válida';
+  // Validar minúsculas
+  result.hasLowerCase = /[a-z]/.test(password);
   
-  if (!isValid) {
-    if (!minLength) {
-      message = 'La contraseña debe tener al menos 8 caracteres';
-    } else if (!hasUpperCase) {
-      message = 'La contraseña debe incluir al menos una letra mayúscula';
-    } else if (!hasLowerCase) {
-      message = 'La contraseña debe incluir al menos una letra minúscula';
-    } else if (!hasNumber) {
-      message = 'La contraseña debe incluir al menos un número';
-    } else if (!hasSpecialChar) {
-      message = 'La contraseña debe incluir al menos un carácter especial';
-    } else if (!notTooLong) {
-      message = 'La contraseña es demasiado larga (máximo 100 caracteres)';
+  // Validar números
+  result.hasNumber = /[0-9]/.test(password);
+  
+  // Validar caracteres especiales
+  result.hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  
+  // Validar que se cumplan todos los requisitos
+  result.isValid = result.minLength && 
+                 result.hasUpperCase && 
+                 result.hasLowerCase && 
+                 result.hasNumber && 
+                 result.hasSpecialChar;
+  
+  // Establecer mensaje de error apropiado
+  if (!result.isValid) {
+    if (!result.minLength) {
+      result.message = 'La contraseña debe tener al menos 8 caracteres';
+    } else if (!result.hasUpperCase) {
+      result.message = 'La contraseña debe incluir al menos una letra mayúscula';
+    } else if (!result.hasLowerCase) {
+      result.message = 'La contraseña debe incluir al menos una letra minúscula';
+    } else if (!result.hasNumber) {
+      result.message = 'La contraseña debe incluir al menos un número';
+    } else if (!result.hasSpecialChar) {
+      result.message = 'La contraseña debe incluir al menos un carácter especial';
     }
   }
   
-  return {
-    isValid,
-    minLength,
-    hasUpperCase,
-    hasLowerCase,
-    hasNumber,
-    hasSpecialChar,
-    notTooLong,
-    message,
-    touched: true
-  };
+  return result;
 };
 
-// Limpiar texto de caracteres potencialmente peligrosos
-export const sanitizeInput = (input) => {
+// Sanitizar entrada de texto (elimina caracteres potencialmente peligrosos)
+const sanitizeInput = (input) => {
   if (typeof input !== 'string') return input;
   
   // Eliminar caracteres HTML y scripts potenciales
   return input
-    .replace(/<[^>]*>/g, '')
-    .replace(/javascript:/gi, '')
-    .replace(/on\w+=/gi, '')
-    .trim();
+    .replace(/<[^>]*>/g, '')  // Eliminar etiquetas HTML
+    .replace(/javascript:/gi, '')  // Eliminar javascript:
+    .replace(/on\w+=/gi, '')  // Eliminar manejadores de eventos inline
+    .trim();  // Eliminar espacios al inicio y final
 };
+
+// Helper para obtener el nombre completo
+const getFullName = (firstName, lastName) => {
+  return `${firstName || ''} ${lastName || ''}`.trim();
+};
+
+export { validateName, validateEmail, validatePassword, sanitizeInput, getFullName };
+
+
+

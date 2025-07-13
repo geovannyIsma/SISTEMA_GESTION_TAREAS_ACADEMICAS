@@ -27,10 +27,18 @@ enum Estado {
   CANCELADA
 }
 
-// Modelos
+model Asignatura {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique
+  nombre      String
+  descripcion String?  @db.Text
+  cursos      Curso[]
+}
+
 model User {
   id                      Int                @id @default(autoincrement())
-  name                    String
+  firstName              String
+  lastName               String
   email                   String             @unique
   password                String
   role                    Role               @default(ESTUDIANTE)
@@ -40,7 +48,7 @@ model User {
   tareas                  Tareas[]
   tareasDocente           Tarea[]            @relation("UserTareasDocente")
   cursos                  Curso[]            @relation("CursoEstudiantes")
-  cursosDocente           Curso[]            @relation("CursoDocentes") 
+  cursosDocente           Curso[]            @relation("CursoDocentes")
   asignacionesEstudiante  TareaAsignacion[]  @relation("AsignacionEstudiante")
   entregas                Entrega[]          @relation("EntregaEstudiante")
   notificaciones          Notificacion[]
@@ -65,6 +73,10 @@ model Curso {
   activo       Boolean             @default(true)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
+
+  asignaturaId Int
+  asignatura   Asignatura          @relation(fields: [asignaturaId], references: [id])
+
   estudiantes  User[]              @relation("CursoEstudiantes")
   docentes     User[]              @relation("CursoDocentes")
   asignaciones TareaAsignacion[]

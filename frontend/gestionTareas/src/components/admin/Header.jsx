@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getFullName } from '../../utils/validation';
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
@@ -16,8 +17,12 @@ const Header = ({ toggleSidebar }) => {
     navigate('/login');
   };
 
+  // Get user's full name or initials
+  const userFullName = user ? getFullName(user.firstName, user.lastName) : 'Usuario';
+  const userInitials = userFullName.charAt(0).toUpperCase();
+
   return (
-    <header className="bg-white shadow-sm z-10">
+    <header className="bg-white shadow-sm z-40 relative">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -73,20 +78,20 @@ const Header = ({ toggleSidebar }) => {
                   >
                     <span className="sr-only">Abrir menú de usuario</span>
                     <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-medium">
-                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      {userInitials}
                     </div>
                   </button>
                 </div>
                 
                 {isDropdownOpen && (
                   <div 
-                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
                   >
                     <div className="block px-4 py-2 text-xs text-gray-500">
                       Sesión iniciada como
                     </div>
                     <div className="block px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
-                      <div className="font-medium">{user?.name}</div>
+                      <div className="font-medium">{userFullName}</div>
                       <div className="text-xs text-gray-600">{user?.email}</div>
                       <div className="text-xs mt-1 inline-block px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
                         {user?.role === 'ADMINISTRADOR' ? 'Administrador' : 

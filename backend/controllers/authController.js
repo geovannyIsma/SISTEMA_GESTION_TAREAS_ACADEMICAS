@@ -2,11 +2,13 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { 
-  isValidName, 
+  isValidFirstName,
+  isValidLastName,
   isValidEmail, 
   isStrongPassword, 
   isValidRole, 
-  sanitizeInput 
+  sanitizeInput,
+  getFullName
 } = require('../utils/validation');
 
 const prisma = new PrismaClient();
@@ -22,20 +24,26 @@ const generateToken = (id) => {
 const registerUser = async (req, res) => {
   try {
     // Sanitizar entradas
-    const name = sanitizeInput(req.body.name);
+    const firstName = sanitizeInput(req.body.firstName);
+    const lastName = sanitizeInput(req.body.lastName);
     const email = sanitizeInput(req.body.email);
     const password = req.body.password; // No sanitizamos password para no afectar caracteres especiales válidos
     const role = req.body.role;
 
     // Validar campos requeridos
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ status: 'error', message: 'Todos los campos son requeridos' });
     }
 
-    // Validar nombre
-    const nameValidation = isValidName(name);
-    if (!nameValidation.isValid) {
-      return res.status(400).json({ status: 'error', message: nameValidation.message });
+    // Validar nombre y apellido
+    const firstNameValidation = isValidFirstName(firstName);
+    if (!firstNameValidation.isValid) {
+      return res.status(400).json({ status: 'error', message: firstNameValidation.message });
+    }
+
+    const lastNameValidation = isValidLastName(lastName);
+    if (!lastNameValidation.isValid) {
+      return res.status(400).json({ status: 'error', message: lastNameValidation.message });
     }
 
     // Validar email
@@ -77,7 +85,8 @@ const registerUser = async (req, res) => {
     // Crear usuario
     const user = await prisma.user.create({
       data: {
-        name,
+        firstName,
+        lastName,
         email,
         password: hashedPassword,
         role: role || 'ESTUDIANTE',
@@ -89,7 +98,9 @@ const registerUser = async (req, res) => {
         status: 'success',
         data: {
           id: user.id,
-          name: user.name,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: getFullName(user.firstName, user.lastName), // Para compatibilidad
           email: user.email,
           role: user.role,
         },
@@ -143,7 +154,9 @@ const loginUser = async (req, res) => {
       status: 'success',
       data: {
         id: user.id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        name: getFullName(user.firstName, user.lastName), // Para compatibilidad
         email: user.email,
         role: user.role,
         token,
@@ -160,23 +173,23 @@ const getMe = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true },
     });
+
+    // Añadir campo name para compatibilidad con el frontend
+    const userData = {
+      ...user,
+      name: getFullName(user.firstName, user.lastName)
+    };
 
     res.status(200).json({
       status: 'success',
-      data: user,
+      data: userData,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: 'error', message: 'Error al obtener datos del usuario' });
   }
-};
-
-module.exports = {
-  registerUser,
-  loginUser,
-  getMe,
 };
 
 module.exports = {

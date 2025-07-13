@@ -18,11 +18,54 @@ const isValidName = (name) => {
     };
   }
   
-  if (name.length > 100) {
-    return { isValid: false, message: 'El nombre no puede exceder 100 caracteres' };
+  if (name.length > 50) {
+    return { isValid: false, message: 'El nombre no puede exceder 50 caracteres' };
   }
   
   return { isValid: true, message: 'Nombre válido' };
+};
+
+// Validar firstName y lastName con las mismas reglas que nombre
+const isValidFirstName = (firstName) => {
+  if (!firstName || firstName.trim().length === 0) {
+    return { isValid: false, message: 'El nombre es obligatorio' };
+  }
+  
+  const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'.-]+$/;
+  
+  if (!nameRegex.test(firstName)) {
+    return { 
+      isValid: false, 
+      message: 'El nombre solo puede contener letras, espacios, apóstrofes y guiones' 
+    };
+  }
+  
+  if (firstName.length > 50) {
+    return { isValid: false, message: 'El nombre no puede exceder 50 caracteres' };
+  }
+  
+  return { isValid: true, message: 'Nombre válido' };
+};
+
+const isValidLastName = (lastName) => {
+  if (!lastName || lastName.trim().length === 0) {
+    return { isValid: false, message: 'El apellido es obligatorio' };
+  }
+  
+  const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'.-]+$/;
+  
+  if (!nameRegex.test(lastName)) {
+    return { 
+      isValid: false, 
+      message: 'El apellido solo puede contener letras, espacios, apóstrofes y guiones' 
+    };
+  }
+  
+  if (lastName.length > 50) {
+    return { isValid: false, message: 'El apellido no puede exceder 50 caracteres' };
+  }
+  
+  return { isValid: true, message: 'Apellido válido' };
 };
 
 // Validar email institucional con formato correcto
@@ -119,10 +162,18 @@ const sanitizeInput = (input) => {
     .trim();
 };
 
+// Función helper para obtener nombre completo
+const getFullName = (firstName, lastName) => {
+  return `${firstName} ${lastName}`.trim();
+};
+
 module.exports = {
   isValidName,
+  isValidFirstName,
+  isValidLastName,
   isValidEmail,
   isStrongPassword,
   isValidRole,
-  sanitizeInput
+  sanitizeInput,
+  getFullName
 };

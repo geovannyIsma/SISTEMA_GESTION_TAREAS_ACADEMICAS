@@ -130,7 +130,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-
+# prisma ORM
 /generated/prisma
-
-/generated/prisma
+/prisma/migrations

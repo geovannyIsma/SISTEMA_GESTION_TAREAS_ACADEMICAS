@@ -4,58 +4,50 @@ import cursoService from '../../services/cursoService';
 import { sanitizeInput } from '../../utils/validation';
 import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
-import api from '../../services/api'; // Asegúrate de importar el cliente de API
+import UserSelector from '../../components/users/UserSelector';
+import AsignaturaSelector from '../../components/courses/AsignaturaSelector';
+import useAlertDialog from '../../hooks/useAlertDialog';
 
 const CursoForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
+  const { alertConfig, showAlert, closeAlert, dialogConfig, showDialog, closeDialog } = useAlertDialog();
 
+  // Form state
   const [formData, setFormData] = useState({
     nombre: '',
     codigo: '',
     descripcion: '',
+    asignaturaId: null,
     activo: true
   });
   
+  // Loading states
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Users state (docentes/estudiantes)
   const [docentes, setDocentes] = useState([]);
   const [estudiantes, setEstudiantes] = useState([]);
   const [allDocentes, setAllDocentes] = useState([]);
   const [allEstudiantes, setAllEstudiantes] = useState([]);
-  const [searchDocenteTerm, setSearchDocenteTerm] = useState('');
-  const [searchEstudianteTerm, setSearchEstudianteTerm] = useState('');
+  
+  // User selector state
   const [assigningDocentes, setAssigningDocentes] = useState(false);
   const [assigningEstudiantes, setAssigningEstudiantes] = useState(false);
   const [selectedDocentes, setSelectedDocentes] = useState([]);
   const [selectedEstudiantes, setSelectedEstudiantes] = useState([]);
-
-  // Estados para alertas
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error',
-    message: '',
-    isVisible: false
-  });
   
-  // Estado para diálogos
-  const [dialogConfig, setDialogConfig] = useState({
-    isOpen: false,
-    type: 'question',
-    title: '',
-    message: '',
-    action: null,
-    actionData: null
-  });
-  
-  // Estado para pestañas
+  // UI state
   const [activeTab, setActiveTab] = useState('info');
 
+  // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Si estamos en modo edición, cargar datos del curso
+        // If in edit mode, load course data
         if (isEditMode) {
           const cursoResponse = await cursoService.getCursoById(id);
           const cursoData = cursoResponse.data;
@@ -64,20 +56,14 @@ const CursoForm = () => {
             nombre: cursoData.nombre,
             codigo: cursoData.codigo,
             descripcion: cursoData.descripcion || '',
+            asignaturaId: cursoData.asignaturaId,
             activo: cursoData.activo
           });
           
-          // Cargar docentes y estudiantes del curso
+          // Load course docentes and estudiantes
           setDocentes(cursoData.docentes || []);
           setEstudiantes(cursoData.estudiantes || []);
         }
-        
-        // Cargar todos los docentes y estudiantes para asignación
-        const docentesResponse = await cursoService.getDocentes();
-        setAllDocentes(docentesResponse.data);
-        
-        const estudiantesResponse = await cursoService.getEstudiantes();
-        setAllEstudiantes(estudiantesResponse.data);
       } catch (err) {
         showAlert('error', 'Error al cargar datos');
         console.error(err);
@@ -89,57 +75,7 @@ const CursoForm = () => {
     fetchData();
   }, [id, isEditMode]);
 
-  // Función para mostrar alertas
-  const showAlert = (type, message, duration = 5000) => {
-    setAlertConfig({ type, message, isVisible: true, duration });
-  };
-
-  // Función para cerrar alertas
-  const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isVisible: false }));
-  };
-
-  // Función para mostrar diálogo
-  const showDialog = (type, title, message, action, actionData = null) => {
-    // Asegurarse de que no haya diálogos modales abiertos antes de mostrar el diálogo de confirmación
-    setAssigningDocentes(false);
-    setAssigningEstudiantes(false);
-    
-    setDialogConfig({
-      isOpen: true,
-      type,
-      title,
-      message,
-      action,
-      actionData
-    });
-  };
-
-  // Función para cerrar diálogo
-  const closeDialog = () => {
-    setDialogConfig({ ...dialogConfig, isOpen: false });
-  };
-
-  // Ejecutar acción al confirmar diálogo
-  const handleDialogConfirm = () => {
-    const { action, actionData } = dialogConfig;
-    closeDialog();
-
-    if (action === 'cancel') {
-      navigate('/cursos');
-    } else if (action === 'submit') {
-      processFormSubmission();
-    } else if (action === 'addDocentes') {
-      handleAddDocentesConfirm();
-    } else if (action === 'addEstudiantes') {
-      handleAddEstudiantesConfirm();
-    } else if (action === 'removeDocente') {
-      handleRemoveDocenteConfirm(actionData);
-    } else if (action === 'removeEstudiante') {
-      handleRemoveEstudianteConfirm(actionData);
-    }
-  };
-
+  // Handle form field changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -154,16 +90,22 @@ const CursoForm = () => {
     }
   };
 
+  // Handle asignatura change
+  const handleAsignaturaChange = (value) => {
+    setFormData({ ...formData, asignaturaId: value });
+  };
+
+  // Form submission handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validar campos obligatorios
-    if (!formData.nombre || !formData.codigo) {
-      showAlert('error', 'El nombre y código del curso son obligatorios');
+    // Validate required fields
+    if (!formData.nombre || !formData.codigo || !formData.asignaturaId) {
+      showAlert('error', 'Nombre, código y asignatura son obligatorios');
       return;
     }
 
-    // Mostrar diálogo de confirmación
+    // Show confirmation dialog
     showDialog(
       'question',
       isEditMode ? 'Actualizar Curso' : 'Crear Curso',
@@ -174,7 +116,7 @@ const CursoForm = () => {
     );
   };
 
-  // Procesar el envío del formulario después de la confirmación
+  // Process form submission after confirmation
   const processFormSubmission = async () => {
     setSubmitting(true);
     
@@ -187,7 +129,7 @@ const CursoForm = () => {
         showAlert('success', 'Curso creado correctamente');
       }
 
-      // Navegar después de un breve retraso para que el usuario vea el mensaje de éxito
+      // Navigate after a brief delay
       setTimeout(() => navigate('/cursos'), 1500);
     } catch (err) {
       showAlert('error', err.message || 'Ocurrió un error al guardar el curso');
@@ -197,7 +139,7 @@ const CursoForm = () => {
     }
   };
 
-  // Confirmar cancelación si hay cambios en el formulario
+  // Confirm cancel if there are form changes
   const confirmCancel = () => {
     showDialog(
       'warning',
@@ -207,139 +149,104 @@ const CursoForm = () => {
     );
   };
 
-  // Filtrar docentes según el término de búsqueda
-  const filteredDocentes = allDocentes.filter(docente => {
-    const matchesSearch = docente.name.toLowerCase().includes(searchDocenteTerm.toLowerCase()) || 
-                         docente.email.toLowerCase().includes(searchDocenteTerm.toLowerCase());
-    // Excluir docentes que ya están en el curso
-    const isNotAssigned = !docentes.some(d => d.id === docente.id);
-    return matchesSearch && isNotAssigned;
-  });
+  // Dialog confirmation handler
+  const handleDialogConfirm = () => {
+    const { action, actionData } = dialogConfig;
+    closeDialog();
 
-  // Filtrar estudiantes según el término de búsqueda
-  const filteredEstudiantes = allEstudiantes.filter(estudiante => {
-    const matchesSearch = estudiante.name.toLowerCase().includes(searchEstudianteTerm.toLowerCase()) || 
-                         estudiante.email.toLowerCase().includes(searchEstudianteTerm.toLowerCase());
-    // Excluir estudiantes que ya están en el curso
-    const isNotAssigned = !estudiantes.some(e => e.id === estudiante.id);
-    return matchesSearch && isNotAssigned;
-  });
-
-  // Abrir modal para añadir docentes
-  const openAddDocentesModal = () => {
-    // Cerrar cualquier otro modal o diálogo que esté abierto
-    setAssigningEstudiantes(false);
-    setDialogConfig({...dialogConfig, isOpen: false});
-    
-    // Cargar docentes filtrados por rol
-    setSearchDocenteTerm('');
-    cursoService.getDocentes()
-      .then(response => {
-        setAllDocentes(response.data);
-        setAssigningDocentes(true);
-        setSelectedDocentes([]);
-      })
-      .catch(error => {
-        showAlert('error', 'Error al cargar docentes');
-        console.error(error);
-      });
+    if (action === 'cancel') {
+      navigate('/cursos');
+    } else if (action === 'submit') {
+      processFormSubmission();
+    } else if (action === 'removeDocente') {
+      handleRemoveDocenteConfirm(actionData);
+    } else if (action === 'removeEstudiante') {
+      handleRemoveEstudianteConfirm(actionData);
+    }
   };
 
-  // Abrir modal para añadir estudiantes
-  const openAddEstudiantesModal = () => {
-    // Cerrar cualquier otro modal o diálogo que esté abierto
-    setAssigningDocentes(false);
-    setDialogConfig({...dialogConfig, isOpen: false});
-    
-    // Cargar estudiantes filtrados por rol
-    setSearchEstudianteTerm('');
-    cursoService.getEstudiantes()
-      .then(response => {
-        setAllEstudiantes(response.data);
-        setAssigningEstudiantes(true);
-        setSelectedEstudiantes([]);
-      })
-      .catch(error => {
-        showAlert('error', 'Error al cargar estudiantes');
-        console.error(error);
-      });
+  // User management functions
+  const openAddDocentesModal = async () => {
+    try {
+      const docentesResponse = await cursoService.getDocentes();
+      // Filter out docentes that are already assigned
+      const availableDocentes = docentesResponse.data.filter(
+        docente => !docentes.some(d => d.id === docente.id)
+      );
+      setAllDocentes(availableDocentes);
+      setSelectedDocentes([]);
+      setAssigningDocentes(true);
+    } catch (error) {
+      showAlert('error', 'Error al cargar docentes');
+      console.error(error);
+    }
   };
 
-  // Seleccionar/deseleccionar docente
+  const openAddEstudiantesModal = async () => {
+    try {
+      const estudiantesResponse = await cursoService.getEstudiantes();
+      // Filter out estudiantes that are already assigned
+      const availableEstudiantes = estudiantesResponse.data.filter(
+        estudiante => !estudiantes.some(e => e.id === estudiante.id)
+      );
+      setAllEstudiantes(availableEstudiantes);
+      setSelectedEstudiantes([]);
+      setAssigningEstudiantes(true);
+    } catch (error) {
+      showAlert('error', 'Error al cargar estudiantes');
+      console.error(error);
+    }
+  };
+
   const toggleSelectDocente = (docenteId) => {
-    if (selectedDocentes.includes(docenteId)) {
-      setSelectedDocentes(selectedDocentes.filter(id => id !== docenteId));
-    } else {
-      setSelectedDocentes([...selectedDocentes, docenteId]);
-    }
+    setSelectedDocentes(prev => 
+      prev.includes(docenteId) 
+        ? prev.filter(id => id !== docenteId)
+        : [...prev, docenteId]
+    );
   };
 
-  // Seleccionar/deseleccionar estudiante
   const toggleSelectEstudiante = (estudianteId) => {
-    if (selectedEstudiantes.includes(estudianteId)) {
-      setSelectedEstudiantes(selectedEstudiantes.filter(id => id !== estudianteId));
-    } else {
-      setSelectedEstudiantes([...selectedEstudiantes, estudianteId]);
-    }
+    setSelectedEstudiantes(prev => 
+      prev.includes(estudianteId) 
+        ? prev.filter(id => id !== estudianteId)
+        : [...prev, estudianteId]
+    );
   };
 
-  // Confirmar añadir docentes seleccionados al curso
-  const confirmAddDocentes = () => {
-    if (selectedDocentes.length === 0) {
-      showAlert('warning', 'No hay docentes seleccionados');
-      return;
-    }
-    
-    // Ejecutar directamente sin mostrar diálogo de confirmación
-    handleAddDocentesConfirm();
-    setAssigningDocentes(false);
-  };
-
-  // Añadir docentes seleccionados al curso
   const handleAddDocentesConfirm = async () => {
     try {
       await cursoService.addDocentes(id, selectedDocentes);
       
-      // Actualizar la lista de docentes del curso
+      // Update docentes list
       const updatedCurso = await cursoService.getCursoById(id);
       setDocentes(updatedCurso.data.docentes);
       
       showAlert('success', 'Docentes añadidos correctamente');
+      setAssigningDocentes(false);
     } catch (error) {
       showAlert('error', 'Error al añadir docentes');
       console.error(error);
     }
   };
 
-  // Confirmar añadir estudiantes seleccionados al curso
-  const confirmAddEstudiantes = () => {
-    if (selectedEstudiantes.length === 0) {
-      showAlert('warning', 'No hay estudiantes seleccionados');
-      return;
-    }
-    
-    // Ejecutar directamente sin mostrar diálogo de confirmación
-    handleAddEstudiantesConfirm();
-    setAssigningEstudiantes(false);
-  };
-
-  // Añadir estudiantes seleccionados al curso
   const handleAddEstudiantesConfirm = async () => {
     try {
       await cursoService.addEstudiantes(id, selectedEstudiantes);
       
-      // Actualizar la lista de estudiantes del curso
+      // Update estudiantes list
       const updatedCurso = await cursoService.getCursoById(id);
       setEstudiantes(updatedCurso.data.estudiantes);
       
       showAlert('success', 'Estudiantes añadidos correctamente');
+      setAssigningEstudiantes(false);
     } catch (error) {
       showAlert('error', 'Error al añadir estudiantes');
       console.error(error);
     }
   };
 
-  // Confirmar eliminar docente del curso
+  // Remove docente confirmation
   const confirmRemoveDocente = (docenteId, docenteName) => {
     showDialog(
       'warning',
@@ -350,14 +257,11 @@ const CursoForm = () => {
     );
   };
 
-  // Eliminar docente del curso
+  // Remove docente after confirmation
   const handleRemoveDocenteConfirm = async (docenteId) => {
     try {
       await cursoService.removeDocentes(id, [docenteId]);
-      
-      // Actualizar la lista de docentes
       setDocentes(docentes.filter(d => d.id !== docenteId));
-      
       showAlert('success', 'Docente eliminado correctamente');
     } catch (error) {
       showAlert('error', 'Error al eliminar docente');
@@ -365,7 +269,7 @@ const CursoForm = () => {
     }
   };
 
-  // Confirmar eliminar estudiante del curso
+  // Remove estudiante confirmation
   const confirmRemoveEstudiante = (estudianteId, estudianteName) => {
     showDialog(
       'warning',
@@ -376,14 +280,11 @@ const CursoForm = () => {
     );
   };
 
-  // Eliminar estudiante del curso
+  // Remove estudiante after confirmation
   const handleRemoveEstudianteConfirm = async (estudianteId) => {
     try {
       await cursoService.removeEstudiantes(id, [estudianteId]);
-      
-      // Actualizar la lista de estudiantes
       setEstudiantes(estudiantes.filter(e => e.id !== estudianteId));
-      
       showAlert('success', 'Estudiante eliminado correctamente');
     } catch (error) {
       showAlert('error', 'Error al eliminar estudiante');
@@ -391,6 +292,7 @@ const CursoForm = () => {
     }
   };
 
+  // Show loading state
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -407,16 +309,16 @@ const CursoForm = () => {
         </h1>
       </div>
 
-      {/* Componente de alerta */}
+      {/* Alert component */}
       <Alert 
         type={alertConfig.type}
         message={alertConfig.message}
         isVisible={alertConfig.isVisible}
         onClose={closeAlert}
-        autoHideDuration={alertConfig.duration || 5000}
+        autoHideDuration={alertConfig.duration}
       />
 
-      {/* Componente de diálogo de confirmación - aumentar z-index */}
+      {/* Confirmation dialog */}
       <Dialog 
         isOpen={dialogConfig.isOpen}
         onClose={closeDialog}
@@ -436,7 +338,7 @@ const CursoForm = () => {
       </Dialog>
 
       <div className="bg-white shadow overflow-hidden rounded-lg">
-        {/* Pestañas para navegar entre información del curso y participantes */}
+        {/* Tabs for course information and participants */}
         {isEditMode && (
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px">
@@ -474,9 +376,9 @@ const CursoForm = () => {
           </div>
         )}
 
-        {/* Contenido según la pestaña activa */}
+        {/* Content based on active tab */}
         <div className="p-6">
-          {/* Pestaña de información del curso (visible por defecto o cuando activeTab === 'info') */}
+          {/* Course information tab */}
           {(!isEditMode || activeTab === 'info') && (
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
@@ -511,6 +413,17 @@ const CursoForm = () => {
                     maxLength={20}
                   />
                   <p className="mt-1 text-xs text-gray-500">Código único para identificar el curso</p>
+                </div>
+
+                <div>
+                  <label htmlFor="asignaturaId" className="block text-sm font-medium text-gray-700">
+                    Asignatura
+                  </label>
+                  <AsignaturaSelector 
+                    value={formData.asignaturaId} 
+                    onChange={handleAsignaturaChange}
+                    required={true}
+                  />
                 </div>
 
                 <div>
@@ -570,7 +483,7 @@ const CursoForm = () => {
             </form>
           )}
 
-          {/* Pestaña de docentes */}
+          {/* Docentes tab */}
           {isEditMode && activeTab === 'docentes' && (
             <div>
               <div className="flex justify-between items-center mb-4">
@@ -606,7 +519,7 @@ const CursoForm = () => {
             </div>
           )}
 
-          {/* Pestaña de estudiantes */}
+          {/* Estudiantes tab */}
           {isEditMode && activeTab === 'estudiantes' && (
             <div>
               <div className="flex justify-between items-center mb-4">
@@ -644,198 +557,36 @@ const CursoForm = () => {
         </div>
       </div>
 
-      {/* Modal para añadir docentes */}
+      {/* UserSelector component for docentes */}
       {assigningDocentes && (
-        <div className="fixed inset-0 overflow-y-auto z-50" aria-modal="true" role="dialog">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            {/* Overlay con fondo semitransparente y desenfoque */}
-            <div 
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
-              onClick={() => setAssigningDocentes(false)}
-            ></div>
-            
-            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-3xl z-50">
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">Añadir docentes al curso</h3>
-                <button onClick={() => setAssigningDocentes(false)} className="text-gray-400 hover:text-gray-500">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6">
-                <div className="mb-4">
-                  <input
-                    type="text"
-                    placeholder="Buscar docentes por nombre o email..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                    value={searchDocenteTerm}
-                    onChange={(e) => handleDocenteSearch(e.target.value)}
-                  />
-                </div>
-                
-                <div className="max-h-96 overflow-y-auto mb-4 border border-gray-200 rounded">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Seleccionar
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Nombre
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Email
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredDocentes.map((docente) => (
-                        <tr key={docente.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={selectedDocentes.includes(docente.id)}
-                              onChange={() => toggleSelectDocente(docente.id)}
-                              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{docente.name}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">{docente.email}</div>
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredDocentes.length === 0 && (
-                        <tr>
-                          <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
-                            No se encontraron docentes disponibles
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <button
-                    onClick={() => setAssigningDocentes(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={confirmAddDocentes}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                    disabled={selectedDocentes.length === 0}
-                  >
-                    {selectedDocentes.length === 0 ? 'Seleccione docentes' : `Añadir ${selectedDocentes.length} docentes`}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <UserSelector
+          title="Añadir docentes al curso"
+          users={allDocentes}
+          selectedIds={selectedDocentes}
+          onToggleSelect={toggleSelectDocente}
+          onCancel={() => setAssigningDocentes(false)}
+          onConfirm={handleAddDocentesConfirm}
+          confirmText="Añadir docentes"
+          searchPlaceholder="Buscar docentes por nombre o email..."
+          emptyMessage="No se encontraron docentes disponibles"
+          primaryColor="indigo"
+        />
       )}
       
-      {/* Modal para añadir estudiantes */}
+      {/* UserSelector component for estudiantes */}
       {assigningEstudiantes && (
-        <div className="fixed inset-0 overflow-y-auto z-50" aria-modal="true" role="dialog">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            {/* Overlay con fondo semitransparente y desenfoque */}
-            <div 
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
-              onClick={() => setAssigningEstudiantes(false)}
-            ></div>
-            
-            <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all w-full max-w-3xl z-50">
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">Añadir estudiantes al curso</h3>
-                <button onClick={() => setAssigningEstudiantes(false)} className="text-gray-400 hover:text-gray-500">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6">
-                <div className="mb-4">
-                  <input
-                    type="text"
-                    placeholder="Buscar estudiantes por nombre o email..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                    value={searchEstudianteTerm}
-                    onChange={(e) => handleEstudianteSearch(e.target.value)}
-                  />
-                </div>
-                
-                <div className="max-h-96 overflow-y-auto mb-4 border border-gray-200 rounded">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Seleccionar
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Nombre
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Email
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredEstudiantes.map((estudiante) => (
-                        <tr key={estudiante.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              checked={selectedEstudiantes.includes(estudiante.id)}
-                              onChange={() => toggleSelectEstudiante(estudiante.id)}
-                              className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{estudiante.name}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">{estudiante.email}</div>
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredEstudiantes.length === 0 && (
-                        <tr>
-                          <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
-                            No se encontraron estudiantes disponibles
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <button
-                    onClick={() => setAssigningEstudiantes(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={confirmAddEstudiantes}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                    disabled={selectedEstudiantes.length === 0}
-                  >
-                    {selectedEstudiantes.length === 0 ? 'Seleccione estudiantes' : `Añadir ${selectedEstudiantes.length} estudiantes`}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <UserSelector
+          title="Añadir estudiantes al curso"
+          users={allEstudiantes}
+          selectedIds={selectedEstudiantes}
+          onToggleSelect={toggleSelectEstudiante}
+          onCancel={() => setAssigningEstudiantes(false)}
+          onConfirm={handleAddEstudiantesConfirm}
+          confirmText="Añadir estudiantes"
+          searchPlaceholder="Buscar estudiantes por nombre o email..."
+          emptyMessage="No se encontraron estudiantes disponibles"
+          primaryColor="green"
+        />
       )}
     </div>
   );

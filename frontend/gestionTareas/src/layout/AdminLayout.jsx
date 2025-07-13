@@ -31,7 +31,7 @@ const AdminLayout = ({ children }) => {
       {/* Overlay para cerrar sidebar en móvil */}
       {isMobile && sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-gray-600 bg-opacity-75 z-10"
+          className="fixed inset-0 bg-gray-600 bg-opacity-75 z-20"
           onClick={toggleSidebar}
         />
       )}
@@ -40,7 +40,7 @@ const AdminLayout = ({ children }) => {
       <Sidebar isOpen={sidebarOpen} />
       
       {/* Contenido principal */}
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
+      <div className="flex flex-col w-0 flex-1 overflow-hidden md:ml-64">
         <Header toggleSidebar={toggleSidebar} />
         
         <main className="flex-1 relative overflow-y-auto focus:outline-none p-4 md:p-6">

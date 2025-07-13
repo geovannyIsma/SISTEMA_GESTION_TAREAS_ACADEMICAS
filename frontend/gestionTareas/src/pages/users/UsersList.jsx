@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
+import { getFullName } from '../../utils/validation';
 
 const UsersList = () => {
   const [users, setUsers] = useState([]);
@@ -81,7 +82,8 @@ const UsersList = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const fullName = getFullName(user.firstName, user.lastName);
+    const matchesSearch = fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole ? user.role === filterRole : true;
     return matchesSearch && matchesRole;
@@ -215,10 +217,12 @@ const UsersList = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-                          {user.name.charAt(0).toUpperCase()}
+                          {user.firstName.charAt(0).toUpperCase()}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {getFullName(user.firstName, user.lastName)}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -241,7 +245,7 @@ const UsersList = () => {
                         Editar
                       </Link>
                       <button 
-                        onClick={() => confirmDelete(user.id, user.name)} 
+                        onClick={() => confirmDelete(user.id, getFullName(user.firstName, user.lastName))} 
                         className="text-red-700 hover:text-red-900 hover:underline focus:outline-none"
                       >
                         Eliminar

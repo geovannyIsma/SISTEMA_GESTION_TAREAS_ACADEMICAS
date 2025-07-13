@@ -1,11 +1,13 @@
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { 
-  isValidName, 
+  isValidFirstName, 
+  isValidLastName, 
   isValidEmail, 
   isStrongPassword, 
   isValidRole,
-  sanitizeInput 
+  sanitizeInput,
+  getFullName
 } = require('../utils/validation');
 
 const prisma = new PrismaClient();
@@ -27,7 +29,8 @@ const getUsers = async (req, res) => {
     // Filtrar por término de búsqueda si se proporciona
     if (search) {
       whereCondition.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } }
       ];
     }
@@ -36,7 +39,8 @@ const getUsers = async (req, res) => {
       where: whereCondition,
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         email: true,
         role: true,
         createdAt: true,
@@ -44,9 +48,15 @@ const getUsers = async (req, res) => {
       },
     });
 
+    // Añadir campo name para compatibilidad con el frontend
+    const usersWithName = users.map(user => ({
+      ...user,
+      name: getFullName(user.firstName, user.lastName)
+    }));
+
     res.status(200).json({
       status: 'success',
-      data: users,
+      data: usersWithName,
     });
   } catch (error) {
     console.error(error);
@@ -63,7 +73,8 @@ const getUserById = async (req, res) => {
       where: { id: Number(id) },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         email: true,
         role: true,
         createdAt: true,
@@ -75,9 +86,15 @@ const getUserById = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
     }
 
+    // Añadir campo name para compatibilidad con el frontend
+    const userData = {
+      ...user,
+      name: getFullName(user.firstName, user.lastName)
+    };
+
     res.status(200).json({
       status: 'success',
-      data: user,
+      data: userData,
     });
   } catch (error) {
     console.error(error);
@@ -89,20 +106,26 @@ const getUserById = async (req, res) => {
 const createUser = async (req, res) => {
   try {
     // Sanitizar entradas
-    const name = sanitizeInput(req.body.name);
+    const firstName = sanitizeInput(req.body.firstName);
+    const lastName = sanitizeInput(req.body.lastName);
     const email = sanitizeInput(req.body.email);
     const password = req.body.password; // No sanitizamos password para no afectar caracteres especiales válidos
     const role = req.body.role;
 
     // Validar campos requeridos
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ status: 'error', message: 'Todos los campos son requeridos' });
     }
 
-    // Validar nombre
-    const nameValidation = isValidName(name);
-    if (!nameValidation.isValid) {
-      return res.status(400).json({ status: 'error', message: nameValidation.message });
+    // Validar nombre y apellido
+    const firstNameValidation = isValidFirstName(firstName);
+    if (!firstNameValidation.isValid) {
+      return res.status(400).json({ status: 'error', message: firstNameValidation.message });
+    }
+
+    const lastNameValidation = isValidLastName(lastName);
+    if (!lastNameValidation.isValid) {
+      return res.status(400).json({ status: 'error', message: lastNameValidation.message });
     }
 
     // Validar email
@@ -144,14 +167,16 @@ const createUser = async (req, res) => {
     // Crear usuario
     const user = await prisma.user.create({
       data: {
-        name,
+        firstName,
+        lastName,
         email,
         password: hashedPassword,
         role: role || 'ESTUDIANTE',
       },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         email: true,
         role: true,
         createdAt: true,
@@ -159,9 +184,15 @@ const createUser = async (req, res) => {
       },
     });
 
+    // Añadir campo name para compatibilidad con el frontend
+    const userData = {
+      ...user,
+      name: getFullName(user.firstName, user.lastName)
+    };
+
     res.status(201).json({
       status: 'success',
-      data: user,
+      data: userData,
     });
   } catch (error) {
     console.error(error);
@@ -175,7 +206,8 @@ const updateUser = async (req, res) => {
     const { id } = req.params;
     
     // Sanitizar entradas
-    const name = req.body.name ? sanitizeInput(req.body.name) : undefined;
+    const firstName = req.body.firstName ? sanitizeInput(req.body.firstName) : undefined;
+    const lastName = req.body.lastName ? sanitizeInput(req.body.lastName) : undefined;
     const email = req.body.email ? sanitizeInput(req.body.email) : undefined;
     const password = req.body.password; // No sanitizamos password
     const role = req.body.role;
@@ -190,10 +222,17 @@ const updateUser = async (req, res) => {
     }
 
     // Validaciones para los campos proporcionados
-    if (name) {
-      const nameValidation = isValidName(name);
-      if (!nameValidation.isValid) {
-        return res.status(400).json({ status: 'error', message: nameValidation.message });
+    if (firstName) {
+      const firstNameValidation = isValidFirstName(firstName);
+      if (!firstNameValidation.isValid) {
+        return res.status(400).json({ status: 'error', message: firstNameValidation.message });
+      }
+    }
+
+    if (lastName) {
+      const lastNameValidation = isValidLastName(lastName);
+      if (!lastNameValidation.isValid) {
+        return res.status(400).json({ status: 'error', message: lastNameValidation.message });
       }
     }
 
@@ -213,7 +252,8 @@ const updateUser = async (req, res) => {
 
     // Preparar datos para actualización
     const updateData = {};
-    if (name) updateData.name = name;
+    if (firstName) updateData.firstName = firstName;
+    if (lastName) updateData.lastName = lastName;
     if (email) updateData.email = email;
     if (role) updateData.role = role;
     
@@ -238,7 +278,8 @@ const updateUser = async (req, res) => {
       data: updateData,
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         email: true,
         role: true,
         createdAt: true,
@@ -246,9 +287,15 @@ const updateUser = async (req, res) => {
       },
     });
 
+    // Añadir campo name para compatibilidad con el frontend
+    const userData = {
+      ...updatedUser,
+      name: getFullName(updatedUser.firstName, updatedUser.lastName)
+    };
+
     res.status(200).json({
       status: 'success',
-      data: updatedUser,
+      data: userData,
     });
   } catch (error) {
     console.error(error);
