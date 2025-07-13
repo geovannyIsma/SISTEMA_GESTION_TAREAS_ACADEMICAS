@@ -65,9 +65,7 @@ const Sidebar = ({ isOpen }) => {
       {/* Logo / título */}
       <div className="px-4 py-6 flex items-center border-b border-indigo-700">
         <div className="flex-shrink-0">
-          <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-          </svg>
+          <img src="/logo_st.svg" alt="Logo" className="h-10 w-10" />
         </div>
         <div className="ml-3">
           <h1 className="text-xl font-bold text-white">SGTA</h1>

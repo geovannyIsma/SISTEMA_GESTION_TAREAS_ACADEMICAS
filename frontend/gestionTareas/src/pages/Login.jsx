@@ -109,128 +109,150 @@ const Login = () => {
     }
   };
 
-  // Estilo dinámico para campos según validación
-  const getInputClasses = (isValid, touched) => {
-    const baseClasses = "appearance-none relative block w-full px-3 py-3 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:z-10 sm:text-sm";
-    
-    if (!touched) return `${baseClasses} border border-gray-300`;
-    
-    return isValid 
-      ? `${baseClasses} border border-green-500` 
-      : `${baseClasses} border border-red-500`;
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
-        <div>
-          <h1 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            Sistema de Gestión de Tareas Académicas
-          </h1>
-          <p className="mt-2 text-center text-sm text-gray-700">
-            Inicie sesión con su cuenta institucional
-          </p>
+    <div className="min-h-screen flex">
+      {/* Left side with enhanced background and logo */}
+      <div className="hidden lg:flex lg:w-1/2 login-bg relative items-center">
+        {/* Background logo with rotation and layers */}
+        <div className="bg-logo-container">
+          <div className="bg-logo" style={{ 
+            backgroundImage: "url('/logo_st.svg')", 
+            backgroundSize: "cover", 
+            backgroundPosition: "left center", 
+            top: "-10%",
+            left: "-25%", 
+            right: "-5%",
+            bottom: "-10%",
+            width: "130%", 
+            height: "120%" 
+          }}></div>
+          <div className="bg-color-layer-1"></div>
+          <div className="bg-color-layer-2"></div>
+          <div className="bg-color-layer-3"></div>
         </div>
         
-        {/* Componente de alerta */}
-        <Alert 
-          type={alertConfig.type}
-          message={alertConfig.message}
-          isVisible={alertConfig.isVisible}
-          onClose={closeAlert}
-          autoHideDuration={alertConfig.duration || 5000}
-        />
-        
-        {/* Componente de diálogo */}
-        <Dialog
-          isOpen={dialogConfig.isOpen}
-          onClose={closeDialog}
-          title={dialogConfig.title}
-          type={dialogConfig.type}
-          confirmText="Entendido"
-          showCancel={false}
-        >
-          <p className="whitespace-pre-line">{dialogConfig.message}</p>
-        </Dialog>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <div>
-              <label htmlFor="email-address" className="sr-only">Correo electrónico</label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className={`${getInputClasses(emailValidation.isValid, emailValidation.touched)} rounded-t-md`}
-                placeholder="Correo electrónico institucional"
-                value={email}
-                onChange={handleEmailChange}
-              />
+        <div className="relative z-10 w-full px-8 md:px-16 flex flex-col items-start justify-center">
+          <div className="flex items-center mb-6">
+            <div className="p-2 mr-3">
+              <img src="/logo_st.svg" alt="Logo" className="h-15 w-15" />
             </div>
-            {emailValidation.touched && !emailValidation.isValid && (
-              <p className="text-xs text-red-600 mt-1">{emailValidation.message}</p>
-            )}
-          </div>
-
-          <div>
-            <div>
-              <label htmlFor="password" className="sr-only">Contraseña</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className={`${getInputClasses(passwordValidation.isValid, passwordValidation.touched)} rounded-b-md`}
-                placeholder="Contraseña"
-                value={password}
-                onChange={handlePasswordChange}
-              />
-            </div>
-            {passwordValidation.touched && !passwordValidation.isValid && (
-              <p className="text-xs text-red-600 mt-1">{passwordValidation.message}</p>
-            )}
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading || (emailValidation.touched && !emailValidation.isValid)}
-              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
-                loading || (emailValidation.touched && !emailValidation.isValid) 
-                  ? 'bg-indigo-400 cursor-not-allowed' 
-                  : 'bg-indigo-600 hover:bg-indigo-700'
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out`}
-            >
-              {loading ? (
-                <>
-                  <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  </span>
-                  Iniciando sesión...
-                </>
-              ) : (
-                <>
-                  <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                    <svg className="h-5 w-5 text-indigo-400 group-hover:text-indigo-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                    </svg>
-                  </span>
-                  Iniciar sesión
-                </>
-              )}
-            </button>
+            <span className="text-blue-300 text-2xl font-bold text-shadow">
+              Sistema de Gestión de Tareas
+            </span>
           </div>
           
-        </form>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 text-shadow">
+            Bienvenido<br />a su cuenta
+          </h1>
+          <p className="text-blue-200 text-xl max-w-md">
+            Plataforma académica para la gestión eficiente de tareas y seguimiento educativo
+          </p>
+        </div>
+      </div>
+      
+      {/* Right side with login form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+        <div className="w-full max-w-md">
+          {/* Mobile logo - only visible on small screens */}
+          <div className="flex items-center justify-center mb-6 lg:hidden">
+            <div className="bg-blue-900 p-2 rounded-full mr-3">
+              <img src="/logo_st.svg" alt="Logo" className="h-8 w-8" />
+            </div>
+            <span className="text-blue-900 text-2xl font-bold">Sistema de Gestión</span>
+          </div>
+
+          <div className="bg-white p-8 rounded-lg shadow-md w-full">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Iniciar sesión</h2>
+            
+            {/* Componente de alerta */}
+            <Alert 
+              type={alertConfig.type}
+              message={alertConfig.message}
+              isVisible={alertConfig.isVisible}
+              onClose={closeAlert}
+              autoHideDuration={alertConfig.duration || 5000}
+            />
+            
+            {/* Componente de diálogo */}
+            <Dialog
+              isOpen={dialogConfig.isOpen}
+              onClose={closeDialog}
+              title={dialogConfig.title}
+              type={dialogConfig.type}
+              confirmText="Entendido"
+              showCancel={false}
+            >
+              <p className="whitespace-pre-line">{dialogConfig.message}</p>
+            </Dialog>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+                <input
+                  id="email-address"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="nombre@ejemplo.com"
+                  value={email}
+                  onChange={handleEmailChange}
+                />
+                {emailValidation.touched && !emailValidation.isValid && (
+                  <p className="text-xs text-red-600 mt-1">{emailValidation.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="Ingrese su contraseña"
+                  value={password}
+                  onChange={handlePasswordChange}
+                />
+                {passwordValidation.touched && !passwordValidation.isValid && (
+                  <p className="text-xs text-red-600 mt-1">{passwordValidation.message}</p>
+                )}
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading || (emailValidation.touched && !emailValidation.isValid)}
+                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                    loading || (emailValidation.touched && !emailValidation.isValid) 
+                      ? 'bg-blue-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300`}
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Iniciando sesión...
+                    </>
+                  ) : 'Iniciar sesión'}
+                </button>
+              </div>
+            </form>
+          </div>
+          
+          <div className="text-center mt-6 text-sm text-gray-500">
+            © {new Date().getFullYear()} Sistema de Gestión de Tareas Académicas. Todos los derechos reservados.
+          </div>
+        </div>
       </div>
     </div>
   );
-}; 
+};
 
 export default Login;
