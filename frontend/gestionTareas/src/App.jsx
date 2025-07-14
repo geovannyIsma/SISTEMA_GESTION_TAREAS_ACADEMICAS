@@ -15,6 +15,7 @@ import AsignaturasList from './pages/asignaturas/AsignaturasList';
 import AsignaturaForm from './pages/asignaturas/AsignaturaForm';
 import './App.css';
 import TareaDocenteForm from './pages/docente/TareaDocenteForm';
+import AsignarTarea from './pages/docente/AsignarTarea';
 
 function App() {
   return (
@@ -95,6 +96,16 @@ function App() {
             <Route path="/docente/tareas/nueva" element={
               <AdminLayout>
                 <TareaDocenteForm />
+              </AdminLayout>
+            } />
+            <Route path="/docente/tareas/:id" element={
+              <AdminLayout>
+                <TareaDocenteForm />
+              </AdminLayout>
+            } />
+            <Route path="/docente/tareas/:id/asignar" element={
+              <AdminLayout>
+                <AsignarTarea />
               </AdminLayout>
             } />
           </Route>

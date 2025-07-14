@@ -90,6 +90,54 @@ const asignarTarea = async (req, res) => {
     if (!cursoId && !estudianteId) {
       return res.status(400).json({ status: 'error', message: 'Debe especificar cursoId o estudianteId' });
     }
+    
+    // Validar que el docente tenga acceso al curso o estudiante
+    if (cursoId) {
+      // Verificar si el docente está asignado al curso
+      const cursoDocente = await prisma.curso.findFirst({
+        where: {
+          id: Number(cursoId),
+          docentes: {
+            some: {
+              id: req.user.id
+            }
+          }
+        }
+      });
+      
+      if (!cursoDocente) {
+        return res.status(403).json({ 
+          status: 'error', 
+          message: 'No tiene permiso para asignar tareas a este curso' 
+        });
+      }
+    }
+    
+    if (estudianteId) {
+      // Verificar si el estudiante pertenece a algún curso del docente
+      const estudianteEnCursoDocente = await prisma.curso.findFirst({
+        where: {
+          docentes: {
+            some: {
+              id: req.user.id
+            }
+          },
+          estudiantes: {
+            some: {
+              id: Number(estudianteId)
+            }
+          }
+        }
+      });
+      
+      if (!estudianteEnCursoDocente) {
+        return res.status(403).json({ 
+          status: 'error', 
+          message: 'No tiene permiso para asignar tareas a este estudiante' 
+        });
+      }
+    }
+
     await prisma.tareaAsignacion.create({
       data: {
         tareaId: tarea.id,
@@ -99,6 +147,7 @@ const asignarTarea = async (req, res) => {
     });
     res.status(200).json({ status: 'success', message: 'Tarea asignada correctamente' });
   } catch (error) {
+    console.error('Error al asignar tarea:', error);
     res.status(500).json({ status: 'error', message: 'Error al asignar tarea' });
   }
 };
@@ -109,10 +158,14 @@ const listarTareasDocente = async (req, res) => {
     console.log('Usuario autenticado:', req.user);
     const tareas = await prisma.tarea.findMany({
       where: { docenteId: req.user.id },
+      orderBy: { 
+        fechaEntrega: 'desc' 
+      }
     });
+    console.log(`Tareas encontradas: ${tareas.length}`);
     res.status(200).json({ status: 'success', data: tareas });
   } catch (error) {
-    console.error('Error en listarTareasDocente:', error); // <-- Esto mostrará el error real en consola
+    console.error('Error en listarTareasDocente:', error);
     res.status(500).json({ status: 'error', message: 'Error al listar tareas' });
   }
 };
@@ -121,19 +174,429 @@ const listarTareasDocente = async (req, res) => {
 const listarEstudiantes = async (req, res) => {
   try {
     const search = req.query.search || '';
+    const cursoId = req.query.cursoId ? Number(req.query.cursoId) : null;
+    
+    // Si se proporciona un ID de curso, verificar que el docente tenga acceso a él
+    if (cursoId) {
+      const cursoDocente = await prisma.curso.findFirst({
+        where: {
+          id: cursoId,
+          docentes: {
+            some: {
+              id: req.user.id
+            }
+          }
+        }
+      });
+      
+      if (!cursoDocente) {
+        return res.status(403).json({ 
+          status: 'error', 
+          message: 'No tiene permiso para ver estudiantes de este curso' 
+        });
+      }
+      
+      // Obtener estudiantes específicos del curso
+      const estudiantes = await prisma.user.findMany({
+        where: {
+          role: 'ESTUDIANTE',
+          cursos: {
+            some: {
+              id: cursoId
+            }
+          },
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } }
+          ]
+        },
+        select: { 
+          id: true, 
+          firstName: true, 
+          lastName: true, 
+          email: true 
+        }
+      });
+      
+      // Añadir campo name para compatibilidad
+      const estudiantesFormateados = estudiantes.map(est => ({
+        ...est,
+        name: `${est.firstName} ${est.lastName}`.trim()
+      }));
+      
+      return res.status(200).json({ 
+        status: 'success', 
+        data: estudiantesFormateados 
+      });
+    }
+    
+    // Si no hay cursoId, obtener estudiantes de todos los cursos del docente
     const estudiantes = await prisma.user.findMany({
       where: {
         role: 'ESTUDIANTE',
+        cursos: {
+          some: {
+            docentes: {
+              some: {
+                id: req.user.id
+              }
+            }
+          }
+        },
         OR: [
-          { name: { contains: search, mode: 'insensitive' } },
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } }
         ]
       },
-      select: { id: true, name: true, email: true }
+      select: { 
+        id: true, 
+        firstName: true, 
+        lastName: true, 
+        email: true 
+      }
     });
-    res.status(200).json({ status: 'success', data: estudiantes });
+    
+    // Añadir campo name para compatibilidad
+    const estudiantesFormateados = estudiantes.map(est => ({
+      ...est,
+      name: `${est.firstName} ${est.lastName}`.trim()
+    }));
+    
+    res.status(200).json({ status: 'success', data: estudiantesFormateados });
   } catch (error) {
+    console.error('Error al listar estudiantes:', error);
     res.status(500).json({ status: 'error', message: 'Error al listar estudiantes' });
+  }
+};
+
+// Obtener tarea por ID
+const getTareaById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tareaId = Number(id);
+    
+    // Buscar la tarea y verificar que pertenezca al docente autenticado
+    const tarea = await prisma.tarea.findUnique({
+      where: { id: tareaId }
+    });
+
+    if (!tarea) {
+      return res.status(404).json({ status: 'error', message: 'Tarea no encontrada' });
+    }
+
+    if (tarea.docenteId !== req.user.id) {
+      return res.status(403).json({ status: 'error', message: 'No tiene permisos para ver esta tarea' });
+    }
+
+    // Obtener información sobre el estado de entregas de esta tarea
+    let allSubmitted = false;
+    let totalStudents = 0;
+    let submittedCount = 0;
+
+    // Obtener todas las asignaciones para esta tarea
+    const asignaciones = await prisma.tareaAsignacion.findMany({
+      where: { tareaId },
+      include: {
+        curso: {
+          include: {
+            estudiantes: {
+              select: { id: true }
+            }
+          }
+        }
+      }
+    });
+
+    // Calcular estudiantes asignados
+    const asignadosSet = new Set();
+    for (const asignacion of asignaciones) {
+      if (asignacion.estudianteId) {
+        asignadosSet.add(asignacion.estudianteId);
+      } else if (asignacion.curso) {
+        asignacion.curso.estudiantes.forEach(est => {
+          asignadosSet.add(est.id);
+        });
+      }
+    }
+    totalStudents = asignadosSet.size;
+
+    // Obtener conteo de entregas
+    if (totalStudents > 0) {
+      const entregas = await prisma.entrega.findMany({
+        where: { tareaId },
+        select: { estudianteId: true }
+      });
+
+      const entregasSet = new Set(entregas.map(e => e.estudianteId));
+      submittedCount = entregasSet.size;
+      
+      // Verificar si todos han entregado
+      const estudiantesSinEntregar = [...asignadosSet].filter(id => !entregasSet.has(id));
+      allSubmitted = estudiantesSinEntregar.length === 0;
+    }
+
+    // Devolver la tarea con información adicional
+    res.status(200).json({ 
+      status: 'success', 
+      data: {
+        ...tarea,
+        allSubmitted,
+        totalStudents,
+        submittedCount
+      } 
+    });
+  } catch (error) {
+    console.error('Error al obtener tarea:', error);
+    res.status(500).json({ status: 'error', message: 'Error al obtener la tarea' });
+  }
+};
+
+// Obtener estado de entregas para una tarea
+const getTareaSubmissionStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tareaId = Number(id);
+    
+    // Verificar que la tarea exista y pertenezca al docente
+    const tarea = await prisma.tarea.findUnique({
+      where: { id: tareaId }
+    });
+
+    if (!tarea) {
+      return res.status(404).json({ status: 'error', message: 'Tarea no encontrada' });
+    }
+
+    if (tarea.docenteId !== req.user.id) {
+      return res.status(403).json({ status: 'error', message: 'No tiene permisos para ver esta tarea' });
+    }
+
+    // Obtener todas las asignaciones para esta tarea
+    const asignaciones = await prisma.tareaAsignacion.findMany({
+      where: { tareaId },
+      include: {
+        curso: {
+          include: {
+            estudiantes: {
+              select: { id: true }
+            }
+          }
+        }
+      }
+    });
+
+    // Calcular estudiantes asignados
+    const asignadosSet = new Set();
+    for (const asignacion of asignaciones) {
+      if (asignacion.estudianteId) {
+        asignadosSet.add(asignacion.estudianteId);
+      } else if (asignacion.curso) {
+        asignacion.curso.estudiantes.forEach(est => {
+          asignadosSet.add(est.id);
+        });
+      }
+    }
+    const totalStudents = asignadosSet.size;
+
+    // Obtener conteo de entregas
+    let submittedCount = 0;
+    let allSubmitted = false;
+    
+    if (totalStudents > 0) {
+      const entregas = await prisma.entrega.findMany({
+        where: { tareaId },
+        select: { estudianteId: true }
+      });
+
+      const entregasSet = new Set(entregas.map(e => e.estudianteId));
+      submittedCount = entregasSet.size;
+      
+      // Verificar si todos han entregado
+      const estudiantesSinEntregar = [...asignadosSet].filter(id => !entregasSet.has(id));
+      allSubmitted = estudiantesSinEntregar.length === 0;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        allSubmitted,
+        totalStudents,
+        submittedCount
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener estado de entregas:', error);
+    res.status(500).json({ status: 'error', message: 'Error al obtener estado de entregas' });
+  }
+};
+
+// Listar los cursos asignados al docente autenticado
+const listarCursosDocente = async (req, res) => {
+  try {
+    console.log('Buscando cursos para docente ID:', req.user.id);
+    const cursos = await prisma.curso.findMany({
+      where: {
+        docentes: {
+          some: {
+            id: req.user.id
+          }
+        },
+        activo: true // Solo cursos activos
+      },
+      include: {
+        asignatura: {
+          select: {
+            id: true,
+            nombre: true,
+            codigo: true
+          }
+        },
+        _count: {
+          select: {
+            estudiantes: true
+          }
+        }
+      },
+      orderBy: {
+        nombre: 'asc'
+      }
+    });
+    
+    console.log(`Cursos encontrados: ${cursos.length}`);
+    res.status(200).json({ status: 'success', data: cursos });
+  } catch (error) {
+    console.error('Error al listar cursos del docente:', error);
+    res.status(500).json({ status: 'error', message: 'Error al listar cursos' });
+  }
+};
+
+// Listar entregas pendientes de revisión
+const listarEntregasPendientes = async (req, res) => {
+  try {
+    // Buscar tareas del docente
+    const tareas = await prisma.tarea.findMany({
+      where: { docenteId: req.user.id },
+      select: { id: true }
+    });
+    
+    const tareaIds = tareas.map(t => t.id);
+    
+    // Buscar entregas sin calificar de esas tareas
+    const entregas = await prisma.entrega.findMany({
+      where: { 
+        tareaId: { in: tareaIds },
+        calificacion: null // Sin calificar
+      },
+      include: {
+        estudiante: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        tarea: {
+          select: {
+            id: true,
+            titulo: true
+          }
+        }
+      },
+      orderBy: { fecha: 'desc' },
+      take: 10 // Limitar a las 10 más recientes
+    });
+    
+    // Añadir nombre completo al estudiante
+    const entregasFormateadas = entregas.map(entrega => ({
+      ...entrega,
+      estudiante: {
+        ...entrega.estudiante,
+        name: `${entrega.estudiante.firstName} ${entrega.estudiante.lastName}`.trim()
+      }
+    }));
+    
+    res.status(200).json({ status: 'success', data: entregasFormateadas });
+  } catch (error) {
+    console.error('Error al listar entregas pendientes:', error);
+    res.status(500).json({ status: 'error', message: 'Error al listar entregas pendientes' });
+  }
+};
+
+// Obtener estadísticas del docente
+const getEstadisticasDocente = async (req, res) => {
+  try {
+    // Obtener conteo de cursos donde el docente está asignado
+    const cursos = await prisma.curso.findMany({
+      where: {
+        docentes: {
+          some: { id: req.user.id }
+        }
+      },
+      include: {
+        _count: {
+          select: { estudiantes: true }
+        }
+      }
+    });
+    
+    // Calcular el total de estudiantes (sin duplicados)
+    const estudiantesPorCurso = await prisma.user.findMany({
+      where: {
+        role: 'ESTUDIANTE',
+        cursos: {
+          some: {
+            docentes: {
+              some: { id: req.user.id }
+            }
+          }
+        }
+      },
+      select: { id: true }
+    });
+    
+    // Obtener tareas del docente
+    const tareas = await prisma.tarea.findMany({
+      where: { docenteId: req.user.id }
+    });
+    
+    // Calcular tareas activas, próximas, etc.
+    const ahora = new Date();
+    const proximaSemana = new Date();
+    proximaSemana.setDate(ahora.getDate() + 7);
+    
+    const tareasActivas = tareas.filter(t => 
+      t.habilitada && new Date(t.fechaEntrega) >= ahora
+    );
+    
+    const tareasProximas = tareasActivas.filter(t => 
+      new Date(t.fechaEntrega) <= proximaSemana
+    );
+    
+    // Contar entregas pendientes
+    const tareaIds = tareas.map(t => t.id);
+    const entregasPendientes = await prisma.entrega.count({
+      where: {
+        tareaId: { in: tareaIds },
+        calificacion: null
+      }
+    });
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        totalCursos: cursos.length,
+        totalEstudiantes: estudiantesPorCurso.length,
+        totalTareas: tareas.length,
+        tareasActivas: tareasActivas.length,
+        tareasProximas: tareasProximas.length,
+        entregasPendientes
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas del docente:', error);
+    res.status(500).json({ status: 'error', message: 'Error al obtener estadísticas' });
   }
 };
 
@@ -143,4 +606,9 @@ module.exports = {
   asignarTarea,
   listarTareasDocente,
   listarEstudiantes,
+  getTareaById,
+  getTareaSubmissionStatus,
+  listarCursosDocente,
+  listarEntregasPendientes,
+  getEstadisticasDocente
 };

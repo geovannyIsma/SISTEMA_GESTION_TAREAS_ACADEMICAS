@@ -23,6 +23,13 @@ const TareaDocenteForm = () => {
     editableHastaUltimaEntrega: true
   });
   
+  // Add submission status state
+  const [submissionStatus, setSubmissionStatus] = useState({
+    allSubmitted: false,
+    totalStudents: 0,
+    submittedCount: 0
+  });
+  
   const [archivo, setArchivo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -44,6 +51,11 @@ const TareaDocenteForm = () => {
     fechaApertura: { isValid: true, message: '', touched: false },
     fechaCierre: { isValid: true, message: '', touched: false }
   });
+
+  // Determine if the task is editable
+  const isReadOnly = isEditMode && 
+    submissionStatus.allSubmitted && 
+    formData.editableHastaUltimaEntrega;
 
   useEffect(() => {
     // Si estamos en modo edición, cargar los datos de la tarea
@@ -80,6 +92,11 @@ const TareaDocenteForm = () => {
             archivoUrl: tareaData.archivoUrl || '',
             editableHastaUltimaEntrega: tareaData.editableHastaUltimaEntrega !== false // Si no existe, asumimos true
           });
+          
+          // Fetch submission status for this task
+          if (tareaData.editableHastaUltimaEntrega !== false) {
+            fetchSubmissionStatus();
+          }
         } catch (err) {
           showAlert('error', err.message || 'Error al cargar datos de la tarea');
           console.error(err);
@@ -111,6 +128,28 @@ const TareaDocenteForm = () => {
     }
   }, [id, isEditMode, showAlert]);
 
+  // New function to fetch submission status
+  const fetchSubmissionStatus = async () => {
+    try {
+      const response = await api.getTareaSubmissionStatus(id);
+      const statusData = response.data;
+      
+      setSubmissionStatus({
+        allSubmitted: statusData.allSubmitted || false,
+        totalStudents: statusData.totalStudents || 0,
+        submittedCount: statusData.submittedCount || 0
+      });
+      
+      // Show warning if all students have submitted and task can't be edited
+      if (statusData.allSubmitted) {
+        showAlert('warning', 'Todos los estudiantes han entregado la tarea. Ya no se puede editar.');
+      }
+    } catch (err) {
+      console.error('Error fetching submission status:', err);
+      // Don't show an alert to the user, this is a secondary feature
+    }
+  };
+
   // Función para mostrar diálogo
   const showDialog = (type, title, message, action) => {
     setDialogConfig({
@@ -138,6 +177,9 @@ const TareaDocenteForm = () => {
   };
 
   const handleChange = (e) => {
+    // If form is read-only, don't allow changes
+    if (isReadOnly) return;
+
     const { name, value, type, checked } = e.target;
     
     // Para campos de texto, sanitizamos la entrada
@@ -163,6 +205,9 @@ const TareaDocenteForm = () => {
   };
 
   const handleFileChange = (e) => {
+    // If form is read-only, don't allow file changes
+    if (isReadOnly) return;
+
     if (e.target.files && e.target.files[0]) {
       setArchivo(e.target.files[0]);
     }
@@ -245,6 +290,12 @@ const TareaDocenteForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Don't allow submission if form is read-only
+    if (isReadOnly) {
+      showAlert('warning', 'Esta tarea ya no se puede editar porque todos los estudiantes han realizado sus entregas');
+      return;
+    }
+
     if (!validateForm()) {
       showAlert('error', 'Por favor complete todos los campos obligatorios correctamente');
       return;
@@ -327,6 +378,10 @@ const TareaDocenteForm = () => {
   const getInputClass = (field) => {
     const baseClass = "mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 sm:text-sm";
     
+    if (isReadOnly) {
+      return `${baseClass} border-gray-300 bg-gray-100 text-gray-700 cursor-not-allowed`;
+    }
+    
     if (!validations[field] || !validations[field].touched) {
       return `${baseClass} border-gray-300`;
     }
@@ -372,6 +427,29 @@ const TareaDocenteForm = () => {
         <p>{dialogConfig.message}</p>
       </Dialog>
 
+      {/* Read-only notification banner */}
+      {isReadOnly && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>Esta tarea ya no puede ser editada.</strong> Todos los estudiantes asignados han completado sus entregas.
+                {submissionStatus.totalStudents > 0 && (
+                  <span className="ml-1">
+                    ({submissionStatus.submittedCount} de {submissionStatus.totalStudents} entregas completadas)
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white shadow overflow-hidden rounded-lg">
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-6">
@@ -388,6 +466,7 @@ const TareaDocenteForm = () => {
                 value={formData.titulo}
                 onChange={handleChange}
                 maxLength={100}
+                disabled={isReadOnly}
               />
               {validations.titulo.touched && !validations.titulo.isValid && (
                 <p className="mt-1 text-sm text-red-600">{validations.titulo.message}</p>
@@ -406,6 +485,7 @@ const TareaDocenteForm = () => {
                 className={getInputClass('descripcion')}
                 value={formData.descripcion}
                 onChange={handleChange}
+                disabled={isReadOnly}
               />
               {validations.descripcion.touched && !validations.descripcion.isValid && (
                 <p className="mt-1 text-sm text-red-600">{validations.descripcion.message}</p>
@@ -425,6 +505,7 @@ const TareaDocenteForm = () => {
                   className={getInputClass('fechaApertura')}
                   value={formData.fechaApertura}
                   onChange={handleChange}
+                  disabled={isReadOnly}
                 />
                 {validations.fechaApertura.touched && !validations.fechaApertura.isValid && (
                   <p className="mt-1 text-sm text-red-600">{validations.fechaApertura.message}</p>
@@ -448,6 +529,7 @@ const TareaDocenteForm = () => {
                   className={getInputClass('fechaCierre')}
                   value={formData.fechaCierre}
                   onChange={handleChange}
+                  disabled={isReadOnly}
                 />
                 {validations.fechaCierre.touched && !validations.fechaCierre.isValid && (
                   <p className="mt-1 text-sm text-red-600">{validations.fechaCierre.message}</p>
@@ -471,9 +553,10 @@ const TareaDocenteForm = () => {
                 min="0"
                 max="20"
                 step="0.1"
-                className="mt-1 block w-32 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className={`mt-1 block w-32 border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 ${isReadOnly ? 'border-gray-300 bg-gray-100 text-gray-700 cursor-not-allowed' : 'border-gray-300 focus:border-indigo-500'} sm:text-sm`}
                 value={formData.notaMaxima}
                 onChange={handleChange}
+                disabled={isReadOnly}
               />
             </div>
 
@@ -489,17 +572,29 @@ const TareaDocenteForm = () => {
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   className="sr-only"
+                  disabled={isReadOnly}
                 />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current.click()}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  disabled={isReadOnly}
+                  className={`px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${isReadOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
                 >
                   Seleccionar archivo
                 </button>
                 <span className="ml-3 text-sm text-gray-500">
                   {archivo ? archivo.name : formData.archivoUrl ? 'Archivo ya subido' : 'Ningún archivo seleccionado'}
                 </span>
+                {formData.archivoUrl && (
+                  <a 
+                    href={formData.archivoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-3 text-sm text-indigo-600 hover:text-indigo-500"
+                  >
+                    Ver archivo
+                  </a>
+                )}
               </div>
             </div>
 
@@ -513,7 +608,8 @@ const TareaDocenteForm = () => {
                       type="checkbox"
                       checked={formData.habilitada}
                       onChange={handleChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className={`h-4 w-4 ${isReadOnly ? 'text-gray-400 cursor-not-allowed' : 'text-indigo-600'} focus:ring-indigo-500 border-gray-300 rounded`}
+                      disabled={isReadOnly}
                     />
                   </div>
                   <div className="ml-3 text-sm">
@@ -533,12 +629,18 @@ const TareaDocenteForm = () => {
                     type="checkbox"
                     checked={formData.editableHastaUltimaEntrega}
                     onChange={handleChange}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    className={`h-4 w-4 ${isReadOnly ? 'text-gray-400 cursor-not-allowed' : 'text-indigo-600'} focus:ring-indigo-500 border-gray-300 rounded`}
+                    disabled={isReadOnly || submissionStatus.allSubmitted}
                   />
                 </div>
                 <div className="ml-3 text-sm">
                   <label htmlFor="editableHastaUltimaEntrega" className="font-medium text-gray-700">Editable hasta última entrega</label>
                   <p className="text-gray-500">Si está marcado, podrá editar la tarea hasta que todos los estudiantes hayan entregado</p>
+                  {submissionStatus.totalStudents > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Estado actual: {submissionStatus.submittedCount} de {submissionStatus.totalStudents} estudiantes han entregado.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -569,9 +671,9 @@ const TareaDocenteForm = () => {
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || isReadOnly}
               className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-                submitting ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                submitting || isReadOnly ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
               }`}
             >
               {submitting ? 'Guardando...' : isEditMode ? 'Actualizar tarea' : 'Crear tarea'}

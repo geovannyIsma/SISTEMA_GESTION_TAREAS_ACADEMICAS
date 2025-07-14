@@ -127,6 +127,23 @@ const TareasDocente = () => {
     return "Con tiempo";
   };
 
+  // Check if a task is editable based on submission status
+  const isTaskEditable = (tarea) => {
+    // If editableHastaUltimaEntrega is false, it's always editable
+    if (tarea.editableHastaUltimaEntrega === false) return true;
+    
+    // If allSubmitted is true, it's not editable
+    return !tarea.allSubmitted;
+  };
+
+  // Handle edit task click
+  const handleEditClick = (e, tarea) => {
+    if (!isTaskEditable(tarea)) {
+      e.preventDefault();
+      showAlert('warning', 'Esta tarea no puede ser editada porque todos los estudiantes han realizado sus entregas.');
+    }
+  };
+
   return (
     <div className="py-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -213,6 +230,9 @@ const TareasDocente = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Material
                   </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Editable
+                  </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
@@ -253,12 +273,28 @@ const TareasDocente = () => {
                         <span className="text-gray-500">Sin material</span>
                       )}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {tarea.editableHastaUltimaEntrega === false ? (
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Siempre
+                        </span>
+                      ) : tarea.allSubmitted ? (
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          Bloqueada
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Editable
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link 
                         to={`/docente/tareas/${tarea.id}`} 
-                        className="text-indigo-700 hover:text-indigo-900 mr-4 hover:underline"
+                        className={`text-indigo-700 hover:text-indigo-900 mr-4 hover:underline ${!isTaskEditable(tarea) ? 'cursor-not-allowed opacity-60' : ''}`}
+                        onClick={(e) => handleEditClick(e, tarea)}
                       >
-                        Editar
+                        {isTaskEditable(tarea) ? 'Editar' : 'Ver'}
                       </Link>
                       <Link 
                         to={`/docente/tareas/${tarea.id}/asignar`} 
@@ -280,7 +316,7 @@ const TareasDocente = () => {
                 
                 {filteredTareas.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-gray-600">
+                    <td colSpan="6" className="px-6 py-12 text-center text-gray-600">
                       <div className="flex flex-col items-center justify-center">
                         <svg className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
