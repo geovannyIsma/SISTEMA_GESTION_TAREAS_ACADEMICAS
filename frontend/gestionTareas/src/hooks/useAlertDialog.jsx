@@ -1,16 +1,11 @@
 import { useState } from 'react';
+import { useAlert } from '../context/AlertContext'; // Import useAlert
 
 /**
  * Custom hook for handling alerts and dialogs
  */
 const useAlertDialog = () => {
-  // Alert state
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error',
-    message: '',
-    isVisible: false,
-    duration: 5000
-  });
+  const { showAlert: globalShowAlert, closeAlert: globalCloseAlert } = useAlert(); // Use global alert context
 
   // Dialog state
   const [dialogConfig, setDialogConfig] = useState({
@@ -24,12 +19,12 @@ const useAlertDialog = () => {
 
   // Show alert with specified type, message and duration
   const showAlert = (type, message, duration = 5000) => {
-    setAlertConfig({ type, message, isVisible: true, duration });
+    globalShowAlert(type, message, duration); // Use the global alert function
   };
 
   // Close alert
   const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isVisible: false }));
+    globalCloseAlert(); // Use the global close function
   };
 
   // Show dialog with specified type, title, message, action and optional data
@@ -50,7 +45,7 @@ const useAlertDialog = () => {
   };
 
   return {
-    alertConfig,
+    alertConfig: {}, // Return empty object as we're using global alerts
     showAlert,
     closeAlert,
     dialogConfig,

@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useAlert } from '../context/AlertContext'; // Import useAlert hook
 import { validateEmail, validatePassword, sanitizeInput } from '../utils/validation';
-import Alert from '../components/alert';
 import Dialog from '../components/dialog';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, loading } = useAuth();
+  const { showAlert } = useAlert(); // Use the global alert context
   const navigate = useNavigate();
   
   // Estados para validaciones
@@ -19,13 +20,6 @@ const Login = () => {
     message: '' 
   });
   
-  // Estado para alerta
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error',
-    message: '',
-    isVisible: false
-  });
-  
   // Estado para diálogo
   const [dialogConfig, setDialogConfig] = useState({
     isOpen: false,
@@ -33,16 +27,6 @@ const Login = () => {
     message: '',
     type: 'info'
   });
-
-  // Función para mostrar alertas
-  const showAlert = (type, message, duration = 5000) => {
-    setAlertConfig({ type, message, isVisible: true, duration });
-  };
-
-  // Función para cerrar alertas
-  const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isVisible: false }));
-  };
 
   // Función para mostrar diálogos
   const showDialog = (title, message, type = 'info') => {
@@ -163,15 +147,6 @@ const Login = () => {
 
           <div className="bg-white p-8 rounded-lg shadow-md w-full">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Iniciar sesión</h2>
-            
-            {/* Componente de alerta */}
-            <Alert 
-              type={alertConfig.type}
-              message={alertConfig.message}
-              isVisible={alertConfig.isVisible}
-              onClose={closeAlert}
-              autoHideDuration={alertConfig.duration || 5000}
-            />
             
             {/* Componente de diálogo */}
             <Dialog

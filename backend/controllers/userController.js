@@ -307,19 +307,88 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = Number(id);
 
     // Verificar si el usuario existe
     const userExists = await prisma.user.findUnique({
-      where: { id: Number(id) },
+      where: { id: userId },
+      include: {
+        cursosDocente: true,
+        cursos: true,
+        tareasDocente: true
+      }
     });
 
     if (!userExists) {
       return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
     }
 
-    // Eliminar usuario
-    await prisma.user.delete({
-      where: { id: Number(id) },
+    // Usar una transacción para asegurar la integridad de los datos
+    await prisma.$transaction(async (tx) => {
+      // 1. Remover al usuario de los cursos donde es docente
+      if (userExists.cursosDocente.length > 0) {
+        await tx.curso.updateMany({
+          where: { 
+            docentes: { 
+              some: { id: userId } 
+            } 
+          },
+          data: {
+            docentes: {
+              disconnect: [{ id: userId }]
+            }
+          }
+        });
+      }
+
+      // 2. Remover al usuario de los cursos donde es estudiante
+      if (userExists.cursos.length > 0) {
+        await tx.curso.updateMany({
+          where: { 
+            estudiantes: { 
+              some: { id: userId } 
+            } 
+          },
+          data: {
+            estudiantes: {
+              disconnect: [{ id: userId }]
+            }
+          }
+        });
+      }
+
+      // 3. Verificar si el usuario ha creado tareas
+      if (userExists.tareasDocente.length > 0) {
+        // Las tareas creadas por el docente no se pueden eliminar automáticamente
+        // porque podrían tener entregas asociadas
+        throw new Error('No se puede eliminar el usuario porque ha creado tareas. Reasigne o elimine las tareas primero.');
+      }
+
+      // 4. Eliminar otras posibles relaciones
+      // Eliminar asignaciones de tareas al estudiante
+      await tx.tareaAsignacion.deleteMany({
+        where: { estudianteId: userId }
+      });
+      
+      // Eliminar notificaciones del usuario
+      await tx.notificacion.deleteMany({
+        where: { usuarioId: userId }
+      });
+
+      // Eliminar entregas del estudiante
+      await tx.entrega.deleteMany({
+        where: { estudianteId: userId }
+      });
+
+      // Eliminar retroalimentaciones para el estudiante
+      await tx.retroalimentacion.deleteMany({
+        where: { estudianteId: userId }
+      });
+
+      // 5. Finalmente, eliminar el usuario
+      await tx.user.delete({
+        where: { id: userId }
+      });
     });
 
     res.status(200).json({
@@ -327,8 +396,28 @@ const deleteUser = async (req, res) => {
       message: 'Usuario eliminado correctamente',
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: 'error', message: 'Error al eliminar usuario' });
+    console.error('Error al eliminar usuario:', error);
+    
+    // Proporcionar mensajes de error más específicos
+    if (error.message.includes('ha creado tareas')) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: error.message 
+      });
+    }
+    
+    // Para errores de restricción de base de datos
+    if (error.code === 'P2003') {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'No se puede eliminar el usuario porque está referenciado en otras partes del sistema' 
+      });
+    }
+    
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Error al eliminar usuario'
+    });
   }
 };
 

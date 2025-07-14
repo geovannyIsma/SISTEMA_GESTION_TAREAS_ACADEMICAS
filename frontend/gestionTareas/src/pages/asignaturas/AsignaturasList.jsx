@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import cursoService from '../../services/cursoService';
-import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
 import useAlertDialog from '../../hooks/useAlertDialog';
 
@@ -10,7 +9,7 @@ const AsignaturasList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const { alertConfig, showAlert, closeAlert, dialogConfig, showDialog, closeDialog } = useAlertDialog();
+  const { showAlert, dialogConfig, showDialog, closeDialog } = useAlertDialog();
 
   useEffect(() => {
     const fetchAsignaturas = async () => {
@@ -18,7 +17,7 @@ const AsignaturasList = () => {
         const response = await cursoService.getAsignaturas();
         setAsignaturas(response.data);
       } catch (err) {
-        showAlert('error', 'Error al cargar asignaturas');
+        showAlert('error', err.message || 'Error al cargar asignaturas');
         console.error(err);
       } finally {
         setLoading(false);
@@ -78,15 +77,6 @@ const AsignaturasList = () => {
           Crear Nueva Asignatura
         </Link>
       </div>
-
-      {/* Componente de alerta */}
-      <Alert 
-        type={alertConfig.type}
-        message={alertConfig.message}
-        isVisible={alertConfig.isVisible}
-        onClose={closeAlert}
-        autoHideDuration={alertConfig.duration || 5000}
-      />
 
       {/* Componente de diálogo */}
       <Dialog
@@ -178,9 +168,17 @@ const AsignaturasList = () => {
                         Editar
                       </Link>
                       <button 
-                        onClick={() => confirmDelete(asignatura.id, asignatura.nombre)} 
-                        className="text-red-700 hover:text-red-900 hover:underline focus:outline-none"
-                        disabled={asignatura._count?.cursos > 0}
+                        onClick={(e) => {
+                          if (asignatura._count?.cursos > 0) {
+                            e.preventDefault();
+                            showAlert('warning', `No se puede eliminar la asignatura "${asignatura.nombre}" porque tiene ${asignatura._count.cursos} curso(s) asociado(s). Debe eliminar los cursos primero.`);
+                          } else {
+                            confirmDelete(asignatura.id, asignatura.nombre);
+                          }
+                        }}
+                        className={`text-red-700 hover:text-red-900 hover:underline focus:outline-none ${
+                          asignatura._count?.cursos > 0 ? 'opacity-60 cursor-not-allowed' : ''
+                        }`}
                       >
                         Eliminar
                       </button>

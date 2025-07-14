@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
-import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
+import { useAlert } from '../../context/AlertContext'; // Import useAlert
 import { getFullName } from '../../utils/validation';
 
 const UsersList = () => {
@@ -11,12 +11,8 @@ const UsersList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
   
-  // Estado para alertas
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error',
-    message: '',
-    isVisible: false
-  });
+  // Use the global alert context
+  const { showAlert } = useAlert();
 
   // Estado para diálogo de confirmación
   const [dialogConfig, setDialogConfig] = useState({
@@ -26,14 +22,9 @@ const UsersList = () => {
     message: '',
   });
 
-  // Función para mostrar alertas
-  const showAlert = (type, message, duration = 5000) => {
-    setAlertConfig({ type, message, isVisible: true, duration });
-  };
-
-  // Función para cerrar alertas
-  const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isVisible: false }));
+  // Función para cerrar diálogo
+  const closeDialog = () => {
+    setDialogConfig({ ...dialogConfig, isOpen: false });
   };
 
   useEffect(() => {
@@ -42,7 +33,7 @@ const UsersList = () => {
         const response = await api.getUsers();
         setUsers(response.data);
       } catch (err) {
-        showAlert('error', 'Error al cargar usuarios');
+        showAlert('error', err.message || 'Error al cargar usuarios');
         console.error(err);
       } finally {
         setLoading(false);
@@ -50,7 +41,7 @@ const UsersList = () => {
     };
 
     fetchUsers();
-  }, []);
+  }, [showAlert]);
 
   // Abrir diálogo de confirmación de eliminación
   const confirmDelete = (userId, userName) => {
@@ -62,11 +53,6 @@ const UsersList = () => {
     });
   };
 
-  // Función para cerrar el diálogo sin acción
-  const closeDialog = () => {
-    setDialogConfig({ ...dialogConfig, isOpen: false });
-  };
-
   // Función para ejecutar la eliminación del usuario
   const handleConfirmDelete = async () => {
     try {
@@ -75,7 +61,7 @@ const UsersList = () => {
       showAlert('success', 'Usuario eliminado correctamente');
       closeDialog();
     } catch (err) {
-      showAlert('error', 'Error al eliminar usuario');
+      showAlert('error', err.message || 'Error al eliminar usuario');
       console.error(err);
       closeDialog();
     }
@@ -123,15 +109,6 @@ const UsersList = () => {
           Agregar Nuevo Usuario
         </Link>
       </div>
-
-      {/* Componente de alerta */}
-      <Alert 
-        type={alertConfig.type}
-        message={alertConfig.message}
-        isVisible={alertConfig.isVisible}
-        onClose={closeAlert}
-        autoHideDuration={alertConfig.duration || 5000}
-      />
 
       {/* Componente de diálogo */}
       <Dialog

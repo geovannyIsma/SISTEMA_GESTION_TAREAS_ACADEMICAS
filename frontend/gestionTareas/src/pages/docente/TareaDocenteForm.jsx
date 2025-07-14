@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
+import { useAlert } from '../../context/AlertContext'; // Import useAlert
 import { sanitizeInput } from '../../utils/validation';
 
 const TareaDocenteForm = () => {
@@ -10,6 +10,7 @@ const TareaDocenteForm = () => {
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
   const fileInputRef = useRef(null);
+  const { showAlert } = useAlert(); // Use the global alert context
 
   const [formData, setFormData] = useState({
     titulo: '',
@@ -26,13 +27,6 @@ const TareaDocenteForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  
-  // Estados para alertas
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error',
-    message: '',
-    isVisible: false
-  });
   
   // Estado para diálogos
   const [dialogConfig, setDialogConfig] = useState({
@@ -87,7 +81,7 @@ const TareaDocenteForm = () => {
             editableHastaUltimaEntrega: tareaData.editableHastaUltimaEntrega !== false // Si no existe, asumimos true
           });
         } catch (err) {
-          showAlert('error', 'Error al cargar datos de la tarea');
+          showAlert('error', err.message || 'Error al cargar datos de la tarea');
           console.error(err);
         } finally {
           setLoading(false);
@@ -115,17 +109,7 @@ const TareaDocenteForm = () => {
         fechaCierre: formatDateForInput(unaSemanaDepues)
       });
     }
-  }, [id, isEditMode]);
-
-  // Función para mostrar alertas
-  const showAlert = (type, message, duration = 5000) => {
-    setAlertConfig({ type, message, isVisible: true, duration });
-  };
-
-  // Función para cerrar alertas
-  const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isVisible: false }));
-  };
+  }, [id, isEditMode, showAlert]);
 
   // Función para mostrar diálogo
   const showDialog = (type, title, message, action) => {
@@ -308,13 +292,12 @@ const TareaDocenteForm = () => {
       if (isEditMode) {
         await api.editarTarea(id, tareaData);
         showAlert('success', 'Tarea actualizada correctamente');
+        navigate('/docente/tareas');
       } else {
         await api.crearTarea(tareaData);
         showAlert('success', 'Tarea creada correctamente');
+        navigate('/docente/tareas')
       }
-
-      // Navegar después de un breve retraso para que el usuario vea el mensaje de éxito
-      setTimeout(() => navigate('/docente/tareas'), 1500);
     } catch (err) {
       setSubmitError(err.message || 'Ocurrió un error al guardar la tarea');
       showAlert('error', err.message || 'Ocurrió un error al guardar la tarea');
@@ -375,15 +358,6 @@ const TareaDocenteForm = () => {
           {isEditMode ? 'Editar tarea' : 'Crear nueva tarea'}
         </h1>
       </div>
-
-      {/* Componente de alerta */}
-      <Alert 
-        type={alertConfig.type}
-        message={alertConfig.message}
-        isVisible={alertConfig.isVisible}
-        onClose={closeAlert}
-        autoHideDuration={alertConfig.duration || 5000}
-      />
 
       {/* Componente de diálogo */}
       <Dialog 

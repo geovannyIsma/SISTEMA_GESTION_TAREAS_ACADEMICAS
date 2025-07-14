@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
-import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
+import { useAlert } from '../../context/AlertContext'; // Import useAlert
 
 // Función para formatear fechas en formato legible
 const formatDate = (dateString) => {
@@ -26,12 +26,8 @@ const TareasDocente = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   
-  // Estado para alertas
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error',
-    message: '',
-    isVisible: false
-  });
+  // Use the global alert context
+  const { showAlert } = useAlert();
 
   // Estado para diálogo de confirmación
   const [dialogConfig, setDialogConfig] = useState({
@@ -41,14 +37,9 @@ const TareasDocente = () => {
     message: '',
   });
 
-  // Función para mostrar alertas
-  const showAlert = (type, message, duration = 5000) => {
-    setAlertConfig({ type, message, isVisible: true, duration });
-  };
-
-  // Función para cerrar alertas
-  const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isVisible: false }));
+  // Función para cerrar diálogo
+  const closeDialog = () => {
+    setDialogConfig({ ...dialogConfig, isOpen: false });
   };
 
   useEffect(() => {
@@ -57,7 +48,7 @@ const TareasDocente = () => {
         const response = await api.listarTareasDocente();
         setTareas(response.data);
       } catch (err) {
-        showAlert('error', 'Error al cargar las tareas');
+        showAlert('error', err.message || 'Error al cargar las tareas');
         console.error(err);
       } finally {
         setLoading(false);
@@ -65,7 +56,7 @@ const TareasDocente = () => {
     };
 
     fetchTareas();
-  }, []);
+  }, [showAlert]);
 
   // Abrir diálogo de confirmación de eliminación
   const confirmDelete = (tareaId, tareaTitulo) => {
@@ -75,11 +66,6 @@ const TareasDocente = () => {
       title: 'Deshabilitar Tarea',
       message: `¿Está seguro de que desea deshabilitar la tarea "${tareaTitulo}"? Los estudiantes no podrán verla.`,
     });
-  };
-
-  // Función para cerrar el diálogo sin acción
-  const closeDialog = () => {
-    setDialogConfig({ ...dialogConfig, isOpen: false });
   };
 
   // Función para ejecutar la deshabilitación de la tarea
@@ -94,7 +80,7 @@ const TareasDocente = () => {
       showAlert('success', 'Tarea deshabilitada correctamente');
       closeDialog();
     } catch (err) {
-      showAlert('error', 'Error al deshabilitar tarea');
+      showAlert('error', err.message || 'Error al deshabilitar tarea');
       console.error(err);
       closeDialog();
     }
@@ -155,15 +141,6 @@ const TareasDocente = () => {
           Crear Nueva Tarea
         </Link>
       </div>
-
-      {/* Componente de alerta */}
-      <Alert 
-        type={alertConfig.type}
-        message={alertConfig.message}
-        isVisible={alertConfig.isVisible}
-        onClose={closeAlert}
-        autoHideDuration={alertConfig.duration || 5000}
-      />
 
       {/* Componente de diálogo */}
       <Dialog

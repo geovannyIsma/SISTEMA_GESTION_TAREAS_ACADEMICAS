@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { validateName, validateEmail, validatePassword, sanitizeInput } from '../../utils/validation';
-import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
+import { useAlert } from '../../context/AlertContext'; // Import useAlert
 
 const UserForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showAlert } = useAlert(); // Use the global alert context
   const isEditMode = Boolean(id);
 
   const [formData, setFormData] = useState({
@@ -20,13 +21,6 @@ const UserForm = () => {
   
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
-  // Estados para alertas
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error',
-    message: '',
-    isVisible: false
-  });
   
   // Estado para diálogos
   const [dialogConfig, setDialogConfig] = useState({
@@ -72,7 +66,7 @@ const UserForm = () => {
             role: userData.role,
           });
         } catch (err) {
-          showAlert('error', 'Error al cargar datos del usuario');
+          showAlert('error', err.message || 'Error al cargar datos del usuario');
           console.error(err);
         } finally {
           setLoading(false);
@@ -81,17 +75,7 @@ const UserForm = () => {
       
       fetchUser();
     }
-  }, [id, isEditMode]);
-
-  // Función para mostrar alertas
-  const showAlert = (type, message, duration = 5000) => {
-    setAlertConfig({ type, message, isVisible: true, duration });
-  };
-
-  // Función para cerrar alertas
-  const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isVisible: false }));
-  };
+  }, [id, isEditMode, showAlert]);
 
   // Función para mostrar diálogo
   const showDialog = (type, title, message, action) => {
@@ -200,6 +184,7 @@ const UserForm = () => {
         }
         await api.updateUser(id, updateData);
         showAlert('success', 'Usuario actualizado correctamente');
+        navigate('/users');
       } else {
         // For new user, all fields are required
         if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
@@ -207,10 +192,8 @@ const UserForm = () => {
         }
         await api.createUser(formData);
         showAlert('success', 'Usuario creado correctamente');
+        navigate('/users');
       }
-
-      // Navegar después de un breve retraso para que el usuario vea el mensaje de éxito
-      setTimeout(() => navigate('/users'), 1500);
     } catch (err) {
       showAlert('error', err.message || 'Ocurrió un error al guardar el usuario');
       console.error(err);
@@ -264,15 +247,6 @@ const UserForm = () => {
           {isEditMode ? 'Editar usuario' : 'Agregar usuario'}
         </h1>
       </div>
-
-      {/* Componente de alerta */}
-      <Alert 
-        type={alertConfig.type}
-        message={alertConfig.message}
-        isVisible={alertConfig.isVisible}
-        onClose={closeAlert}
-        autoHideDuration={alertConfig.duration || 5000}
-      />
 
       {/* Componente de diálogo */}
       <Dialog 

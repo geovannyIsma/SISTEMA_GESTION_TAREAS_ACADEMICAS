@@ -1,17 +1,21 @@
 import { useEffect } from 'react';
+import { useAlert } from '../context/AlertContext';
 
-const Alert = ({ type, message, isVisible, onClose, autoHideDuration = 3000 }) => {
+const GlobalAlert = () => {
+  const { alertState, closeAlert } = useAlert();
+  const { type, message, isVisible, duration } = alertState;
+
   useEffect(() => {
-    if (isVisible && autoHideDuration > 0) {
+    if (isVisible && duration > 0) {
       const timer = setTimeout(() => {
-        onClose();
-      }, autoHideDuration);
+        closeAlert();
+      }, duration);
 
       return () => {
         clearTimeout(timer);
       };
     }
-  }, [isVisible, autoHideDuration, onClose]);
+  }, [isVisible, duration, closeAlert]);
 
   if (!isVisible) return null;
 
@@ -87,7 +91,7 @@ const Alert = ({ type, message, isVisible, onClose, autoHideDuration = 3000 }) =
         </div>
         <button 
           className={`ml-3 flex-shrink-0 ${style.text} hover:opacity-75`}
-          onClick={onClose}
+          onClick={closeAlert}
           aria-label="Cerrar"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -100,4 +104,4 @@ const Alert = ({ type, message, isVisible, onClose, autoHideDuration = 3000 }) =
   );
 };
 
-export default Alert;
+export default GlobalAlert;

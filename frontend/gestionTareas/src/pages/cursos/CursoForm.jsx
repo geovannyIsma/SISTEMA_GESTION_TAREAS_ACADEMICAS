@@ -2,17 +2,18 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import cursoService from '../../services/cursoService';
 import { sanitizeInput } from '../../utils/validation';
-import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
 import UserSelector from '../../components/users/UserSelector';
 import AsignaturaSelector from '../../components/courses/AsignaturaSelector';
 import useAlertDialog from '../../hooks/useAlertDialog';
+import { useAlert } from '../../context/AlertContext'; // Import the useAlert hook
 
 const CursoForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
-  const { alertConfig, showAlert, closeAlert, dialogConfig, showDialog, closeDialog } = useAlertDialog();
+  const { dialogConfig, showDialog, closeDialog } = useAlertDialog();
+  const { showAlert } = useAlert(); // Use the global alert context
 
   // Form state
   const [formData, setFormData] = useState({
@@ -65,7 +66,7 @@ const CursoForm = () => {
           setEstudiantes(cursoData.estudiantes || []);
         }
       } catch (err) {
-        showAlert('error', 'Error al cargar datos');
+        showAlert('error', err.message || 'Error al cargar datos');
         console.error(err);
       } finally {
         setLoading(false);
@@ -73,7 +74,7 @@ const CursoForm = () => {
     };
     
     fetchData();
-  }, [id, isEditMode]);
+  }, [id, isEditMode, showAlert]);
 
   // Handle form field changes
   const handleChange = (e) => {
@@ -124,13 +125,14 @@ const CursoForm = () => {
       if (isEditMode) {
         await cursoService.updateCurso(id, formData);
         showAlert('success', 'Curso actualizado correctamente');
+        // Navigate immediately without delay
+        navigate('/cursos');
       } else {
         await cursoService.createCurso(formData);
         showAlert('success', 'Curso creado correctamente');
+        // Navigate immediately without delay
+        navigate('/cursos');
       }
-
-      // Navigate after a brief delay
-      setTimeout(() => navigate('/cursos'), 1500);
     } catch (err) {
       showAlert('error', err.message || 'Ocurrió un error al guardar el curso');
       console.error(err);
@@ -177,7 +179,7 @@ const CursoForm = () => {
       setSelectedDocentes([]);
       setAssigningDocentes(true);
     } catch (error) {
-      showAlert('error', 'Error al cargar docentes');
+      showAlert('error', error.message || 'Error al cargar docentes');
       console.error(error);
     }
   };
@@ -193,7 +195,7 @@ const CursoForm = () => {
       setSelectedEstudiantes([]);
       setAssigningEstudiantes(true);
     } catch (error) {
-      showAlert('error', 'Error al cargar estudiantes');
+      showAlert('error', error.message || 'Error al cargar estudiantes');
       console.error(error);
     }
   };
@@ -225,7 +227,7 @@ const CursoForm = () => {
       showAlert('success', 'Docentes añadidos correctamente');
       setAssigningDocentes(false);
     } catch (error) {
-      showAlert('error', 'Error al añadir docentes');
+      showAlert('error', error.message || 'Error al añadir docentes');
       console.error(error);
     }
   };
@@ -241,7 +243,7 @@ const CursoForm = () => {
       showAlert('success', 'Estudiantes añadidos correctamente');
       setAssigningEstudiantes(false);
     } catch (error) {
-      showAlert('error', 'Error al añadir estudiantes');
+      showAlert('error', error.message || 'Error al añadir estudiantes');
       console.error(error);
     }
   };
@@ -264,7 +266,7 @@ const CursoForm = () => {
       setDocentes(docentes.filter(d => d.id !== docenteId));
       showAlert('success', 'Docente eliminado correctamente');
     } catch (error) {
-      showAlert('error', 'Error al eliminar docente');
+      showAlert('error', error.message || 'Error al eliminar docente');
       console.error(error);
     }
   };
@@ -287,7 +289,7 @@ const CursoForm = () => {
       setEstudiantes(estudiantes.filter(e => e.id !== estudianteId));
       showAlert('success', 'Estudiante eliminado correctamente');
     } catch (error) {
-      showAlert('error', 'Error al eliminar estudiante');
+      showAlert('error', error.message || 'Error al eliminar estudiante');
       console.error(error);
     }
   };
@@ -308,15 +310,6 @@ const CursoForm = () => {
           {isEditMode ? 'Editar curso' : 'Crear curso'}
         </h1>
       </div>
-
-      {/* Alert component */}
-      <Alert 
-        type={alertConfig.type}
-        message={alertConfig.message}
-        isVisible={alertConfig.isVisible}
-        onClose={closeAlert}
-        autoHideDuration={alertConfig.duration}
-      />
 
       {/* Confirmation dialog */}
       <Dialog 

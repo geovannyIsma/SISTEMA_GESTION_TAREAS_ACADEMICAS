@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import cursoService from '../../services/cursoService';
 import { sanitizeInput } from '../../utils/validation';
-import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
+import { useAlert } from '../../context/AlertContext'; // Import useAlert directly
 import useAlertDialog from '../../hooks/useAlertDialog';
 
 const AsignaturaForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
-  const { alertConfig, showAlert, closeAlert, dialogConfig, showDialog, closeDialog } = useAlertDialog();
+  const { alertConfig, closeAlert, dialogConfig, showDialog, closeDialog } = useAlertDialog();
+  const { showAlert } = useAlert(); // Use global alert directly when needed
 
   // Form state
   const [formData, setFormData] = useState({
@@ -43,7 +44,7 @@ const AsignaturaForm = () => {
           setCursos(asignaturaData.cursos || []);
         }
       } catch (err) {
-        showAlert('error', 'Error al cargar datos');
+        showAlert('error', err.message || 'Error al cargar datos');
         console.error(err);
       } finally {
         setLoading(false);
@@ -102,13 +103,12 @@ const AsignaturaForm = () => {
       if (isEditMode) {
         await cursoService.updateAsignatura(id, formData);
         showAlert('success', 'Asignatura actualizada correctamente');
+        navigate('/asignaturas');
       } else {
         await cursoService.createAsignatura(formData);
         showAlert('success', 'Asignatura creada correctamente');
+        navigate('/asignaturas');
       }
-
-      // Navigate after a brief delay
-      setTimeout(() => navigate('/asignaturas'), 1500);
     } catch (err) {
       if (err.message && err.message.includes('código')) {
         showAlert('error', 'Ya existe una asignatura con ese código');
@@ -149,15 +149,6 @@ const AsignaturaForm = () => {
       </div>
 
       {/* Alert component */}
-      <Alert 
-        type={alertConfig.type}
-        message={alertConfig.message}
-        isVisible={alertConfig.isVisible}
-        onClose={closeAlert}
-        autoHideDuration={alertConfig.duration}
-      />
-
-      {/* Confirmation dialog */}
       <Dialog 
         isOpen={dialogConfig.isOpen}
         onClose={closeDialog}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import cursoService from '../../services/cursoService';
-import Alert from '../../components/alert';
 import Dialog from '../../components/dialog';
+import { useAlert } from '../../context/AlertContext'; // Import useAlert hook
 
 const CursosList = () => {
   const [cursos, setCursos] = useState([]);
@@ -10,12 +10,8 @@ const CursosList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterActive, setFilterActive] = useState('');
   
-  // Estado para alertas
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error',
-    message: '',
-    isVisible: false
-  });
+  // Use the global alert context
+  const { showAlert } = useAlert();
 
   // Estado para diálogo de confirmación
   const [dialogConfig, setDialogConfig] = useState({
@@ -25,14 +21,9 @@ const CursosList = () => {
     message: '',
   });
 
-  // Función para mostrar alertas
-  const showAlert = (type, message, duration = 5000) => {
-    setAlertConfig({ type, message, isVisible: true, duration });
-  };
-
-  // Función para cerrar alertas
-  const closeAlert = () => {
-    setAlertConfig(prev => ({ ...prev, isVisible: false }));
+  // Función para cerrar el diálogo sin acción
+  const closeDialog = () => {
+    setDialogConfig({ ...dialogConfig, isOpen: false });
   };
 
   useEffect(() => {
@@ -41,7 +32,7 @@ const CursosList = () => {
         const response = await cursoService.getCursos();
         setCursos(response.data);
       } catch (err) {
-        showAlert('error', 'Error al cargar los cursos');
+        showAlert('error', err.message || 'Error al cargar los cursos');
         console.error(err);
       } finally {
         setLoading(false);
@@ -49,7 +40,7 @@ const CursosList = () => {
     };
 
     fetchCursos();
-  }, []);
+  }, [showAlert]);
 
   // Abrir diálogo de confirmación de eliminación
   const confirmDelete = (cursoId, cursoNombre) => {
@@ -61,11 +52,6 @@ const CursosList = () => {
     });
   };
 
-  // Función para cerrar el diálogo sin acción
-  const closeDialog = () => {
-    setDialogConfig({ ...dialogConfig, isOpen: false });
-  };
-
   // Función para ejecutar la eliminación del curso
   const handleConfirmDelete = async () => {
     try {
@@ -74,7 +60,7 @@ const CursosList = () => {
       showAlert('success', 'Curso eliminado correctamente');
       closeDialog();
     } catch (err) {
-      showAlert('error', 'Error al eliminar curso');
+      showAlert('error', err.message || 'Error al eliminar curso');
       console.error(err);
       closeDialog();
     }
@@ -104,15 +90,6 @@ const CursosList = () => {
           Crear Nuevo Curso
         </Link>
       </div>
-
-      {/* Componente de alerta */}
-      <Alert 
-        type={alertConfig.type}
-        message={alertConfig.message}
-        isVisible={alertConfig.isVisible}
-        onClose={closeAlert}
-        autoHideDuration={alertConfig.duration || 5000}
-      />
 
       {/* Componente de diálogo */}
       <Dialog
