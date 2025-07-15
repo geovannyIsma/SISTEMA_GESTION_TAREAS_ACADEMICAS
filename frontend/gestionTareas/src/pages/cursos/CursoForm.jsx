@@ -65,6 +65,14 @@ const CursoForm = () => {
           setDocentes(cursoData.docentes || []);
           setEstudiantes(cursoData.estudiantes || []);
         }
+        
+        // Pre-load available docentes and estudiantes for both create and edit mode
+        const docentesResponse = await cursoService.getDocentes();
+        const estudiantesResponse = await cursoService.getEstudiantes();
+        
+        setAllDocentes(docentesResponse.data);
+        setAllEstudiantes(estudiantesResponse.data);
+        
       } catch (err) {
         showAlert('error', err.message || 'Error al cargar datos');
         console.error(err);
@@ -128,9 +136,21 @@ const CursoForm = () => {
         // Navigate immediately without delay
         navigate('/cursos');
       } else {
-        await cursoService.createCurso(formData);
+        // For new course, create it first then add students and teachers if selected
+        const createResponse = await cursoService.createCurso(formData);
+        const newCursoId = createResponse.data.id;
+        
+        // Add selected docentes if any
+        if (selectedDocentes.length > 0) {
+          await cursoService.addDocentes(newCursoId, selectedDocentes);
+        }
+        
+        // Add selected estudiantes if any
+        if (selectedEstudiantes.length > 0) {
+          await cursoService.addEstudiantes(newCursoId, selectedEstudiantes);
+        }
+        
         showAlert('success', 'Curso creado correctamente');
-        // Navigate immediately without delay
         navigate('/cursos');
       }
     } catch (err) {
@@ -170,13 +190,12 @@ const CursoForm = () => {
   // User management functions
   const openAddDocentesModal = async () => {
     try {
-      const docentesResponse = await cursoService.getDocentes();
-      // Filter out docentes that are already assigned
-      const availableDocentes = docentesResponse.data.filter(
-        docente => !docentes.some(d => d.id === docente.id)
-      );
-      setAllDocentes(availableDocentes);
-      setSelectedDocentes([]);
+      // Filter out docentes that are already selected (for new course) 
+      // or already assigned (for edit mode)
+      const availableDocentes = isEditMode
+        ? allDocentes.filter(docente => !docentes.some(d => d.id === docente.id))
+        : allDocentes.filter(docente => !selectedDocentes.includes(docente.id));
+      
       setAssigningDocentes(true);
     } catch (error) {
       showAlert('error', error.message || 'Error al cargar docentes');
@@ -186,13 +205,12 @@ const CursoForm = () => {
 
   const openAddEstudiantesModal = async () => {
     try {
-      const estudiantesResponse = await cursoService.getEstudiantes();
-      // Filter out estudiantes that are already assigned
-      const availableEstudiantes = estudiantesResponse.data.filter(
-        estudiante => !estudiantes.some(e => e.id === estudiante.id)
-      );
-      setAllEstudiantes(availableEstudiantes);
-      setSelectedEstudiantes([]);
+      // Filter out estudiantes that are already selected (for new course) 
+      // or already assigned (for edit mode)
+      const availableEstudiantes = isEditMode
+        ? allEstudiantes.filter(estudiante => !estudiantes.some(e => e.id === estudiante.id))
+        : allEstudiantes.filter(estudiante => !selectedEstudiantes.includes(estudiante.id));
+        
       setAssigningEstudiantes(true);
     } catch (error) {
       showAlert('error', error.message || 'Error al cargar estudiantes');
@@ -218,13 +236,18 @@ const CursoForm = () => {
 
   const handleAddDocentesConfirm = async () => {
     try {
-      await cursoService.addDocentes(id, selectedDocentes);
-      
-      // Update docentes list
-      const updatedCurso = await cursoService.getCursoById(id);
-      setDocentes(updatedCurso.data.docentes);
-      
-      showAlert('success', 'Docentes añadidos correctamente');
+      if (isEditMode) {
+        await cursoService.addDocentes(id, selectedDocentes);
+        
+        // Update docentes list
+        const updatedCurso = await cursoService.getCursoById(id);
+        setDocentes(updatedCurso.data.docentes);
+        
+        showAlert('success', 'Docentes añadidos correctamente');
+      } else {
+        // For new courses, just keep track of the selected docentes to add after creation
+        showAlert('success', `${selectedDocentes.length} docentes seleccionados`);
+      }
       setAssigningDocentes(false);
     } catch (error) {
       showAlert('error', error.message || 'Error al añadir docentes');
@@ -234,13 +257,18 @@ const CursoForm = () => {
 
   const handleAddEstudiantesConfirm = async () => {
     try {
-      await cursoService.addEstudiantes(id, selectedEstudiantes);
-      
-      // Update estudiantes list
-      const updatedCurso = await cursoService.getCursoById(id);
-      setEstudiantes(updatedCurso.data.estudiantes);
-      
-      showAlert('success', 'Estudiantes añadidos correctamente');
+      if (isEditMode) {
+        await cursoService.addEstudiantes(id, selectedEstudiantes);
+        
+        // Update estudiantes list
+        const updatedCurso = await cursoService.getCursoById(id);
+        setEstudiantes(updatedCurso.data.estudiantes);
+        
+        showAlert('success', 'Estudiantes añadidos correctamente');
+      } else {
+        // For new courses, just keep track of the selected estudiantes to add after creation
+        showAlert('success', `${selectedEstudiantes.length} estudiantes seleccionados`);
+      }
       setAssigningEstudiantes(false);
     } catch (error) {
       showAlert('error', error.message || 'Error al añadir estudiantes');
@@ -250,13 +278,19 @@ const CursoForm = () => {
 
   // Remove docente confirmation
   const confirmRemoveDocente = (docenteId, docenteName) => {
-    showDialog(
-      'warning',
-      'Eliminar docente',
-      `¿Está seguro de que desea eliminar al docente ${docenteName} del curso?`,
-      'removeDocente',
-      docenteId
-    );
+    if (isEditMode) {
+      showDialog(
+        'warning',
+        'Eliminar docente',
+        `¿Está seguro de que desea eliminar al docente ${docenteName} del curso?`,
+        'removeDocente',
+        docenteId
+      );
+    } else {
+      // For new courses, just remove from selectedDocentes array
+      setSelectedDocentes(selectedDocentes.filter(id => id !== docenteId));
+      showAlert('info', 'Docente eliminado de la selección');
+    }
   };
 
   // Remove docente after confirmation
@@ -273,13 +307,19 @@ const CursoForm = () => {
 
   // Remove estudiante confirmation
   const confirmRemoveEstudiante = (estudianteId, estudianteName) => {
-    showDialog(
-      'warning',
-      'Eliminar estudiante',
-      `¿Está seguro de que desea eliminar al estudiante ${estudianteName} del curso?`,
-      'removeEstudiante',
-      estudianteId
-    );
+    if (isEditMode) {
+      showDialog(
+        'warning',
+        'Eliminar estudiante',
+        `¿Está seguro de que desea eliminar al estudiante ${estudianteName} del curso?`,
+        'removeEstudiante',
+        estudianteId
+      );
+    } else {
+      // For new courses, just remove from selectedEstudiantes array
+      setSelectedEstudiantes(selectedEstudiantes.filter(id => id !== estudianteId));
+      showAlert('info', 'Estudiante eliminado de la selección');
+    }
   };
 
   // Remove estudiante after confirmation
@@ -302,6 +342,72 @@ const CursoForm = () => {
       </div>
     );
   }
+
+  // Helper function to render selected docentes for new courses
+  const renderSelectedDocentes = () => {
+    if (selectedDocentes.length === 0) {
+      return (
+        <p className="text-gray-500 py-4">No hay docentes seleccionados para este curso</p>
+      );
+    }
+    
+    return (
+      <ul className="divide-y divide-gray-200">
+        {selectedDocentes.map(docenteId => {
+          const docente = allDocentes.find(d => d.id === docenteId);
+          if (!docente) return null;
+          
+          return (
+            <li key={docente.id} className="py-3 flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-medium">{docente.name || `${docente.firstName} ${docente.lastName}`}</h3>
+                <p className="text-xs text-gray-500">{docente.email}</p>
+              </div>
+              <button
+                onClick={() => confirmRemoveDocente(docente.id, docente.name || `${docente.firstName} ${docente.lastName}`)}
+                className="text-red-600 hover:text-red-800 text-sm"
+              >
+                Eliminar
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
+
+  // Helper function to render selected estudiantes for new courses
+  const renderSelectedEstudiantes = () => {
+    if (selectedEstudiantes.length === 0) {
+      return (
+        <p className="text-gray-500 py-4">No hay estudiantes seleccionados para este curso</p>
+      );
+    }
+    
+    return (
+      <ul className="divide-y divide-gray-200">
+        {selectedEstudiantes.map(estudianteId => {
+          const estudiante = allEstudiantes.find(e => e.id === estudianteId);
+          if (!estudiante) return null;
+          
+          return (
+            <li key={estudiante.id} className="py-3 flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-medium">{estudiante.name || `${estudiante.firstName} ${estudiante.lastName}`}</h3>
+                <p className="text-xs text-gray-500">{estudiante.email}</p>
+              </div>
+              <button
+                onClick={() => confirmRemoveEstudiante(estudiante.id, estudiante.name || `${estudiante.firstName} ${estudiante.lastName}`)}
+                className="text-red-600 hover:text-red-800 text-sm"
+              >
+                Eliminar
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
 
   return (
     <div className="py-6">
@@ -331,48 +437,46 @@ const CursoForm = () => {
       </Dialog>
 
       <div className="bg-white shadow overflow-hidden rounded-lg">
-        {/* Tabs for course information and participants */}
-        {isEditMode && (
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px">
-              <button
-                onClick={() => setActiveTab('info')}
-                className={`py-4 px-6 border-b-2 font-medium text-sm ${
-                  activeTab === 'info' 
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Información del Curso
-              </button>
-              <button
-                onClick={() => setActiveTab('docentes')}
-                className={`py-4 px-6 border-b-2 font-medium text-sm ${
-                  activeTab === 'docentes' 
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Docentes
-              </button>
-              <button
-                onClick={() => setActiveTab('estudiantes')}
-                className={`py-4 px-6 border-b-2 font-medium text-sm ${
-                  activeTab === 'estudiantes' 
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Estudiantes
-              </button>
-            </nav>
-          </div>
-        )}
+        {/* Tabs for course information and participants - Now available for both create and edit */}
+        <div className="border-b border-gray-200">
+          <nav className="flex -mb-px">
+            <button
+              onClick={() => setActiveTab('info')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm ${
+                activeTab === 'info' 
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Información del Curso
+            </button>
+            <button
+              onClick={() => setActiveTab('docentes')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm ${
+                activeTab === 'docentes' 
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Docentes
+            </button>
+            <button
+              onClick={() => setActiveTab('estudiantes')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm ${
+                activeTab === 'estudiantes' 
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Estudiantes
+            </button>
+          </nav>
+        </div>
 
         {/* Content based on active tab */}
         <div className="p-6">
           {/* Course information tab */}
-          {(!isEditMode || activeTab === 'info') && (
+          {activeTab === 'info' && (
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
                 <div>
@@ -477,89 +581,123 @@ const CursoForm = () => {
           )}
 
           {/* Docentes tab */}
-          {isEditMode && activeTab === 'docentes' && (
+          {activeTab === 'docentes' && (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Docentes asignados al curso</h2>
+                <h2 className="text-lg font-medium text-gray-900">
+                  {isEditMode ? 'Docentes asignados al curso' : 'Seleccionar docentes para el curso'}
+                </h2>
                 <button 
                   onClick={openAddDocentesModal}
                   className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
                 >
-                  Añadir docentes
+                  {isEditMode ? 'Añadir docentes' : 'Seleccionar docentes'}
                 </button>
               </div>
               
-              {docentes.length > 0 ? (
-                <ul className="divide-y divide-gray-200">
-                  {docentes.map(docente => (
-                    <li key={docente.id} className="py-3 flex justify-between items-center">
-                      <div>
-                        <h3 className="text-sm font-medium">{docente.name}</h3>
-                        <p className="text-xs text-gray-500">{docente.email}</p>
-                      </div>
-                      <button
-                        onClick={() => confirmRemoveDocente(docente.id, docente.name)}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                      >
-                        Eliminar
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              {isEditMode ? (
+                docentes.length > 0 ? (
+                  <ul className="divide-y divide-gray-200">
+                    {docentes.map(docente => (
+                      <li key={docente.id} className="py-3 flex justify-between items-center">
+                        <div>
+                          <h3 className="text-sm font-medium">{docente.name}</h3>
+                          <p className="text-xs text-gray-500">{docente.email}</p>
+                        </div>
+                        <button
+                          onClick={() => confirmRemoveDocente(docente.id, docente.name)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Eliminar
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 py-4">No hay docentes asignados a este curso</p>
+                )
               ) : (
-                <p className="text-gray-500 py-4">No hay docentes asignados a este curso</p>
+                renderSelectedDocentes()
               )}
             </div>
           )}
 
           {/* Estudiantes tab */}
-          {isEditMode && activeTab === 'estudiantes' && (
+          {activeTab === 'estudiantes' && (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Estudiantes matriculados en el curso</h2>
+                <h2 className="text-lg font-medium text-gray-900">
+                  {isEditMode ? 'Estudiantes matriculados en el curso' : 'Seleccionar estudiantes para el curso'}
+                </h2>
                 <button 
                   onClick={openAddEstudiantesModal}
                   className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
                 >
-                  Matricular estudiantes
+                  {isEditMode ? 'Matricular estudiantes' : 'Seleccionar estudiantes'}
                 </button>
               </div>
               
-              {estudiantes.length > 0 ? (
-                <ul className="divide-y divide-gray-200">
-                  {estudiantes.map(estudiante => (
-                    <li key={estudiante.id} className="py-3 flex justify-between items-center">
-                      <div>
-                        <h3 className="text-sm font-medium">{estudiante.name}</h3>
-                        <p className="text-xs text-gray-500">{estudiante.email}</p>
-                      </div>
-                      <button
-                        onClick={() => confirmRemoveEstudiante(estudiante.id, estudiante.name)}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                      >
-                        Eliminar
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              {isEditMode ? (
+                estudiantes.length > 0 ? (
+                  <ul className="divide-y divide-gray-200">
+                    {estudiantes.map(estudiante => (
+                      <li key={estudiante.id} className="py-3 flex justify-between items-center">
+                        <div>
+                          <h3 className="text-sm font-medium">{estudiante.name}</h3>
+                          <p className="text-xs text-gray-500">{estudiante.email}</p>
+                        </div>
+                        <button
+                          onClick={() => confirmRemoveEstudiante(estudiante.id, estudiante.name)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Eliminar
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 py-4">No hay estudiantes matriculados en este curso</p>
+                )
               ) : (
-                <p className="text-gray-500 py-4">No hay estudiantes matriculados en este curso</p>
+                renderSelectedEstudiantes()
               )}
             </div>
           )}
         </div>
+
+        {/* Display action buttons at the bottom when on docentes or estudiantes tab */}
+        {(activeTab === 'docentes' || activeTab === 'estudiantes') && !isEditMode && (
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={confirmCancel}
+              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('info')}
+              className="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Continuar a Información del Curso
+            </button>
+          </div>
+        )}
       </div>
 
       {/* UserSelector component for docentes */}
       {assigningDocentes && (
         <UserSelector
-          title="Añadir docentes al curso"
-          users={allDocentes}
+          title={isEditMode ? "Añadir docentes al curso" : "Seleccionar docentes para el curso"}
+          users={isEditMode 
+            ? allDocentes.filter(docente => !docentes.some(d => d.id === docente.id)) 
+            : allDocentes.filter(docente => !selectedDocentes.includes(docente.id))}
           selectedIds={selectedDocentes}
           onToggleSelect={toggleSelectDocente}
           onCancel={() => setAssigningDocentes(false)}
           onConfirm={handleAddDocentesConfirm}
-          confirmText="Añadir docentes"
+          confirmText={isEditMode ? "Añadir docentes" : "Seleccionar docentes"}
           searchPlaceholder="Buscar docentes por nombre o email..."
           emptyMessage="No se encontraron docentes disponibles"
           primaryColor="indigo"
@@ -569,13 +707,15 @@ const CursoForm = () => {
       {/* UserSelector component for estudiantes */}
       {assigningEstudiantes && (
         <UserSelector
-          title="Añadir estudiantes al curso"
-          users={allEstudiantes}
+          title={isEditMode ? "Añadir estudiantes al curso" : "Seleccionar estudiantes para el curso"}
+          users={isEditMode 
+            ? allEstudiantes.filter(estudiante => !estudiantes.some(e => e.id === estudiante.id))
+            : allEstudiantes.filter(estudiante => !selectedEstudiantes.includes(estudiante.id))}
           selectedIds={selectedEstudiantes}
           onToggleSelect={toggleSelectEstudiante}
           onCancel={() => setAssigningEstudiantes(false)}
           onConfirm={handleAddEstudiantesConfirm}
-          confirmText="Añadir estudiantes"
+          confirmText={isEditMode ? "Añadir estudiantes" : "Seleccionar estudiantes"}
           searchPlaceholder="Buscar estudiantes por nombre o email..."
           emptyMessage="No se encontraron estudiantes disponibles"
           primaryColor="green"
