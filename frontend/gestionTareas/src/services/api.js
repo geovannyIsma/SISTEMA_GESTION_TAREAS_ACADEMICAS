@@ -78,30 +78,40 @@ const api = {
   },
   deshabilitarTarea: (id) => apiRequest(`/docente/tareas/${id}`, 'PUT', { habilitada: false }),
   getTareaSubmissionStatus: (id) => apiRequest(`/docente/tareas/${id}/submission-status`),
-  
-  // Nuevo método para listar entregas pendientes de revisión
-  listarEntregasPendientes: () => {
+    listarEntregasPendientes: () => {
     console.log("Llamando al endpoint /docente/entregas/pendientes");
     return apiRequest('/docente/entregas/pendientes');
   },
   
-  // Nuevo método para obtener estadísticas del docente
   getDocenteEstadisticas: () => {
     console.log("Llamando al endpoint /docente/estadisticas");
     return apiRequest('/docente/estadisticas');
   },
-  
-  // Nuevo método para listar cursos del docente
-  listarCursosDocente: () => {
+    listarCursosDocente: () => {
     console.log("Llamando al endpoint /docente/cursos");
     return apiRequest('/docente/cursos');
   },
   
-  // Método mejorado para listar estudiantes (ahora puede filtrar por curso)
   listarEstudiantesDocente: (search = '', cursoId = null) => {
-    let url = `/docente/estudiantes?search=${encodeURIComponent(search)}`;
-    if (cursoId) url += `&cursoId=${cursoId}`;
-    return apiRequest(url);
+    let url = `/docente/estudiantes?`;
+    const params = [];
+    
+    if (search) {
+      params.push(`search=${encodeURIComponent(search)}`);
+    }
+    
+    if (cursoId) {
+      params.push(`cursoId=${cursoId}`);
+    }
+    
+    url += params.join('&');
+    console.log(`Calling API endpoint: ${url}`);
+    
+    return apiRequest(url)
+      .catch(error => {
+        console.error(`Error fetching students: ${error.message}`);
+        throw error;
+      });
   },
 
   // Tareas Estudiante

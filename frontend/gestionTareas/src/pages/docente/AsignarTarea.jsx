@@ -54,11 +54,16 @@ const AsignarTarea = () => {
     if (tipoAsignacion === 'estudiante' && selectedCursoId) {
       const fetchEstudiantes = async () => {
         try {
+          setLoading(true);
+          console.log(`Fetching students for course ID: ${selectedCursoId}`);
           const response = await api.listarEstudiantesDocente(searchTerm, selectedCursoId);
-          setEstudiantes(response.data);
+          setEstudiantes(response.data || []);
         } catch (err) {
-          showAlert('error', err.message || 'Error al cargar estudiantes');
-          console.error(err);
+          console.error("Error fetching students:", err);
+          showAlert('error', err.message || 'Error al cargar estudiantes. Por favor, intente nuevamente.');
+          setEstudiantes([]);
+        } finally {
+          setLoading(false);
         }
       };
       fetchEstudiantes();

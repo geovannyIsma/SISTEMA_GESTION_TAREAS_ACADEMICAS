@@ -176,6 +176,8 @@ const listarEstudiantes = async (req, res) => {
     const search = req.query.search || '';
     const cursoId = req.query.cursoId ? Number(req.query.cursoId) : null;
     
+    console.log(`Buscando estudiantes para docente ID: ${req.user.id}, curso: ${cursoId}, search: "${search}"`);
+    
     // Si se proporciona un ID de curso, verificar que el docente tenga acceso a él
     if (cursoId) {
       const cursoDocente = await prisma.curso.findFirst({
@@ -190,6 +192,7 @@ const listarEstudiantes = async (req, res) => {
       });
       
       if (!cursoDocente) {
+        console.warn(`Acceso denegado: Docente ${req.user.id} intentó acceder al curso ${cursoId}`);
         return res.status(403).json({ 
           status: 'error', 
           message: 'No tiene permiso para ver estudiantes de este curso' 
@@ -205,11 +208,11 @@ const listarEstudiantes = async (req, res) => {
               id: cursoId
             }
           },
-          OR: [
+          OR: search ? [
             { firstName: { contains: search, mode: 'insensitive' } },
             { lastName: { contains: search, mode: 'insensitive' } },
             { email: { contains: search, mode: 'insensitive' } }
-          ]
+          ] : undefined
         },
         select: { 
           id: true, 
@@ -219,10 +222,12 @@ const listarEstudiantes = async (req, res) => {
         }
       });
       
+      console.log(`Encontrados ${estudiantes.length} estudiantes para el curso ${cursoId}`);
+      
       // Añadir campo name para compatibilidad
       const estudiantesFormateados = estudiantes.map(est => ({
         ...est,
-        name: `${est.firstName} ${est.lastName}`.trim()
+        name: `${est.firstName || ''} ${est.lastName || ''}`.trim()
       }));
       
       return res.status(200).json({ 
@@ -244,11 +249,11 @@ const listarEstudiantes = async (req, res) => {
             }
           }
         },
-        OR: [
+        OR: search ? [
           { firstName: { contains: search, mode: 'insensitive' } },
           { lastName: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } }
-        ]
+        ] : undefined
       },
       select: { 
         id: true, 
@@ -258,16 +263,22 @@ const listarEstudiantes = async (req, res) => {
       }
     });
     
+    console.log(`Encontrados ${estudiantes.length} estudiantes para todos los cursos del docente ${req.user.id}`);
+    
     // Añadir campo name para compatibilidad
     const estudiantesFormateados = estudiantes.map(est => ({
       ...est,
-      name: `${est.firstName} ${est.lastName}`.trim()
+      name: `${est.firstName || ''} ${est.lastName || ''}`.trim()
     }));
     
     res.status(200).json({ status: 'success', data: estudiantesFormateados });
   } catch (error) {
     console.error('Error al listar estudiantes:', error);
-    res.status(500).json({ status: 'error', message: 'Error al listar estudiantes' });
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Error al listar estudiantes',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
