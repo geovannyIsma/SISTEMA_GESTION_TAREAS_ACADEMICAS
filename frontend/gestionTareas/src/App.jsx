@@ -16,6 +16,10 @@ import AsignaturaForm from './pages/asignaturas/AsignaturaForm';
 import './App.css';
 import TareaDocenteForm from './pages/docente/TareaDocenteForm';
 import AsignarTarea from './pages/docente/AsignarTarea';
+import CursosEstudiante from './pages/estudiante/CursosEstudiante';
+import CursoTareasEstudiante from './pages/estudiante/CursoTareasEstudiante';
+import TareasEstudiante from './pages/estudiante/TareasEstudiante';
+import TareaDetalleEstudiante from './pages/estudiante/TareaDetalleEstudiante';
 
 function App() {
   return (
@@ -110,6 +114,27 @@ function App() {
             } />
           </Route>
           
+          {/* Rutas para estudiantes */}
+          <Route path="/estudiante/tareas" element={
+            <AdminLayout>
+              <TareasEstudiante />
+            </AdminLayout>
+          } />
+          <Route path="/estudiante/cursos" element={
+            <AdminLayout>
+              <CursosEstudiante />
+            </AdminLayout>
+          } />
+          <Route path="/estudiante/cursos/:id" element={
+            <AdminLayout>
+              <CursoTareasEstudiante />
+            </AdminLayout>
+          } />
+          <Route path="/estudiante/tareas/:id" element={
+            <AdminLayout>
+              <TareaDetalleEstudiante />
+            </AdminLayout>
+          } />
           {/* Redirección por defecto */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

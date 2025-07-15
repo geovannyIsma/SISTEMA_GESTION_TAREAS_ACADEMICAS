@@ -116,6 +116,12 @@ const api = {
 
   // Tareas Estudiante
   listarTareasEstudiante: () => apiRequest('/estudiante/tareas'),
+  listarCursosEstudiante: () => apiRequest('/estudiante/cursos'),
+  getCursoEstudianteById: (id) => apiRequest(`/estudiante/cursos/${id}`),
+  getTareasCursoEstudiante: (cursoId) => apiRequest(`/estudiante/cursos/${cursoId}/tareas`),
+  getTareaEstudianteById: (id) => apiRequest(`/estudiante/tareas/${id}`),
+  enviarEntregaTarea: (tareaId, data) => apiRequest(`/estudiante/tareas/${tareaId}/entrega`, 'POST', data),
+  getEstadisticasEstudiante: () => apiRequest('/estudiante/estadisticas'),
 
   // Buscar estudiantes por nombre o apellido
   buscarEstudiantes: (query) => apiRequest(`/users?search=${encodeURIComponent(query)}&role=ESTUDIANTE`),

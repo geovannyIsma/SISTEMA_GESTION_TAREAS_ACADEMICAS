@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const docenteRoutes = require('./routes/docenteRoutes');
 const estudianteRoutes = require('./routes/estudianteRoutes');
 const cursoRoutes = require('./routes/cursoRoutes');
@@ -19,8 +19,8 @@ app.use(cors());
 app.use(express.json());
 
 // Rutas
-app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/docente', docenteRoutes);
 app.use('/api/estudiante', estudianteRoutes);
 app.use('/api/cursos', cursoRoutes);
