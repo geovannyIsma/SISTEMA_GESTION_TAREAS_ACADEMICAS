@@ -28,7 +28,7 @@ const apiRequest = async (endpoint, method = 'GET', data = null) => {
     const response = await fetch(`${API_URL}${endpoint}`, config);
     const result = await response.json();
     
-    if (!response.ok) {
+    if (!response.ok && result.status !== 'success') {
       console.error(`Error en petición a ${endpoint}:`, result);
       throw new Error(result.message || `Error ${response.status}: ${response.statusText}`);
     }

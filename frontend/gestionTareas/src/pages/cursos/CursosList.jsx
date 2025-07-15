@@ -55,12 +55,27 @@ const CursosList = () => {
   // Función para ejecutar la eliminación del curso
   const handleConfirmDelete = async () => {
     try {
-      await cursoService.deleteCurso(dialogConfig.cursoId);
-      setCursos(cursos.filter(curso => curso.id !== dialogConfig.cursoId));
-      showAlert('success', 'Curso eliminado correctamente');
+      const response = await cursoService.deleteCurso(dialogConfig.cursoId);
+      
+      // Verificar si el curso fue desactivado en lugar de eliminado
+      if (response && response.message && response.message.includes("desactivado")) {
+        // Actualizar el estado del curso a inactivo en lugar de eliminarlo de la lista
+        setCursos(cursos.map(curso => 
+          curso.id === dialogConfig.cursoId 
+            ? { ...curso, activo: false } 
+            : curso
+        ));
+        
+        // Mostrar mensaje de desactivación
+        showAlert('warning', response.message || 'Curso desactivado correctamente ya que tiene asignaciones relacionadas');
+      } else {
+        // El curso fue eliminado realmente, eliminarlo de la lista
+        setCursos(cursos.filter(curso => curso.id !== dialogConfig.cursoId));
+        showAlert('success', 'Curso eliminado correctamente');
+      }
       closeDialog();
     } catch (err) {
-      showAlert('error', err.message || 'Error al eliminar curso');
+      showAlert('error', err.message || 'Error al procesar la solicitud');
       console.error(err);
       closeDialog();
     }

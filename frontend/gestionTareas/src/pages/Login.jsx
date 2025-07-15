@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext'; // Import useAlert hook
 import { validateEmail, validatePassword, sanitizeInput } from '../utils/validation';
 import Dialog from '../components/dialog';
+import '../pages/login.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');

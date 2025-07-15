@@ -22,7 +22,8 @@ const updateCurso = async (id, cursoData) => {
 
 // Eliminar un curso
 const deleteCurso = async (id) => {
-  return api.delete(`/cursos/${id}`);
+  const response = await api.delete(`/cursos/${id}`);
+  return response; // Devolver la respuesta completa en lugar de solo los datos
 };
 
 // Agregar estudiantes a un curso
