@@ -17,6 +17,9 @@ router.get('/tareas/:id', docenteController.getTareaById);
 // Editar tarea
 router.put('/tareas/:id', docenteController.editarTarea);
 
+// Eliminar tarea
+router.delete('/tareas/:id', docenteController.eliminarTarea);
+
 // Asignar tarea a curso o estudiante
 router.post('/tareas/:id/asignar', docenteController.asignarTarea);
 

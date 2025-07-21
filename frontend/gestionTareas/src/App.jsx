@@ -23,6 +23,7 @@ import CursosEstudiante from './pages/estudiante/CursosEstudiante';
 import CursoTareasEstudiante from './pages/estudiante/CursoTareasEstudiante';
 import TareasEstudiante from './pages/estudiante/TareasEstudiante';
 import TareaDetalleEstudiante from './pages/estudiante/TareaDetalleEstudiante';
+import EntregasEstudiante from './pages/estudiante/EntregasEstudiante';
 
 function App() {
   return (
@@ -152,6 +153,11 @@ function App() {
             <Route path="/estudiante/tareas/:id" element={
               <AdminLayout>
                 <TareaDetalleEstudiante />
+              </AdminLayout>
+            } />
+            <Route path="/estudiante/entregas" element={
+              <AdminLayout>
+                <EntregasEstudiante />
               </AdminLayout>
             } />
           </Route>

@@ -72,6 +72,7 @@ const api = {
   editarTarea: (id, data) => apiRequest(`/docente/tareas/${id}`, 'PUT', data),
   getTareaById: (id) => apiRequest(`/docente/tareas/${id}`),
   asignarTarea: (id, data) => apiRequest(`/docente/tareas/${id}/asignar`, 'POST', data),
+  eliminarTarea: (id) => apiRequest(`/docente/tareas/${id}`, 'DELETE'),
   listarTareasDocente: () => {
     console.log("Llamando al endpoint /docente/tareas");
     return apiRequest('/docente/tareas');
@@ -142,7 +143,54 @@ const api = {
       }
       return response.json();
     });
-  }
+  },
+
+  // Entregas de estudiantes
+  getEntregaEstudiante: (tareaId) => apiRequest(`/estudiante/tareas/${tareaId}/entrega`),
+  crearEntregaEstudiante: (tareaId, formData) => {
+    const token = localStorage.getItem('token');
+    
+    return fetch(`${API_URL}/estudiante/tareas/${tareaId}/entrega`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    }).then(response => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          throw new Error(data.message || `Error ${response.status}: ${response.statusText}`);
+        });
+      }
+      return response.json();
+    });
+  },
+  actualizarEntregaEstudiante: (tareaId, formData) => {
+    const token = localStorage.getItem('token');
+    
+    return fetch(`${API_URL}/estudiante/tareas/${tareaId}/entrega`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    }).then(response => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          throw new Error(data.message || `Error ${response.status}: ${response.statusText}`);
+        });
+      }
+      return response.json();
+    });
+  },
+  getEntregasEstudiante: () => apiRequest('/estudiante/entregas'),
+  
+  // Eliminar entrega completa
+  eliminarEntregaEstudiante: (tareaId) => apiRequest(`/estudiante/tareas/${tareaId}/entrega`, 'DELETE'),
+  
+  // Eliminar un archivo específico de una entrega
+  eliminarArchivoEntrega: (tareaId, archivoId) => 
+    apiRequest(`/estudiante/tareas/${tareaId}/entrega/archivos/${archivoId}`, 'DELETE'),
 };
 
 export default api;

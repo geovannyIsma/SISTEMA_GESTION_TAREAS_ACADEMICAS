@@ -109,28 +109,6 @@ model TareaAsignacion {
   estudiante    User?   @relation("AsignacionEstudiante", fields: [estudianteId], references: [id])
 }
 
-model Entrega {
-  id             Int                 @id @default(autoincrement())
-  tareaId        Int
-  tarea          Tarea              @relation(fields: [tareaId], references: [id])
-  estudianteId   Int
-  estudiante     User               @relation("EntregaEstudiante", fields: [estudianteId], references: [id])
-  fecha          DateTime           @default(now())
-  fueraDePlazo   Boolean            @default(false)
-  calificacion   Float?
-  observaciones  String?
-  archivos       ArchivoEntrega[]
-}
-
-model ArchivoEntrega {
-  id         Int      @id @default(autoincrement())
-  entregaId  Int
-  entrega    Entrega  @relation(fields: [entregaId], references: [id])
-  url        String
-  tipo       String   // PDF, ZIP, IMG
-  sizeMB     Float
-}
-
 model Retroalimentacion {
   id            Int      @id @default(autoincrement())
   tareaId       Int
@@ -152,4 +130,27 @@ model Notificacion {
   leido      Boolean  @default(false)
   fecha      DateTime @default(now())
   tipo       String   // NUEVA_TAREA, ENTREGA, RETRO, etc.
+}
+
+model Entrega {
+  id               Int             @id @default(autoincrement())
+  tareaId          Int
+  tarea            Tarea           @relation(fields: [tareaId], references: [id])
+  estudianteId     Int
+  estudiante       User            @relation("EntregaEstudiante", fields: [estudianteId], references: [id])
+  comentario       String?
+  fecha            DateTime        @default(now())
+  fueraDePlazo     Boolean         @default(false)
+  calificacion     Float?
+  observaciones    String?
+  archivos         ArchivoEntrega[]
+}
+
+model ArchivoEntrega {
+  id               Int             @id @default(autoincrement())
+  entregaId        Int
+  entrega          Entrega         @relation(fields: [entregaId], references: [id])
+  url              String
+  tipo             String          // PDF, ZIP, IMG, OTRO
+  sizeMB           Float
 }

@@ -611,6 +611,57 @@ const getEstadisticasDocente = async (req, res) => {
   }
 };
 
+// Eliminar una tarea
+const eliminarTarea = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tareaId = Number(id);
+    
+    // Verificar que la tarea existe y pertenece al docente
+    const tarea = await prisma.tarea.findUnique({
+      where: { id: tareaId }
+    });
+    
+    if (!tarea) {
+      return res.status(404).json({ status: 'error', message: 'Tarea no encontrada' });
+    }
+    
+    if (tarea.docenteId !== req.user.id) {
+      return res.status(403).json({ status: 'error', message: 'No tiene permisos para eliminar esta tarea' });
+    }
+    
+    // Verificar si hay entregas asociadas a esta tarea
+    const entregasExistentes = await prisma.entrega.count({
+      where: { tareaId }
+    });
+    
+    if (entregasExistentes > 0) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'No se puede eliminar la tarea porque tiene entregas asociadas. Deshabilite la tarea en su lugar.' 
+      });
+    }
+    
+    // Usar transacción para garantizar la integridad de los datos
+    await prisma.$transaction(async (prisma) => {
+      // Eliminar las asignaciones de la tarea primero
+      await prisma.tareaAsignacion.deleteMany({
+        where: { tareaId }
+      });
+      
+      // Eliminar la tarea
+      await prisma.tarea.delete({
+        where: { id: tareaId }
+      });
+    });
+    
+    res.status(200).json({ status: 'success', message: 'Tarea eliminada correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar tarea:', error);
+    res.status(500).json({ status: 'error', message: 'Error al eliminar la tarea' });
+  }
+};
+
 module.exports = {
   crearTarea,
   editarTarea,
@@ -621,5 +672,6 @@ module.exports = {
   getTareaSubmissionStatus,
   listarCursosDocente,
   listarEntregasPendientes,
-  getEstadisticasDocente
+  getEstadisticasDocente,
+  eliminarTarea
 };

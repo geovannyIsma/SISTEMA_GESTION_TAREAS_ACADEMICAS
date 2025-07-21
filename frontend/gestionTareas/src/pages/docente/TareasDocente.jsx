@@ -35,6 +35,7 @@ const TareasDocente = () => {
     tareaId: null,
     title: '',
     message: '',
+    action: '' // Add 'action' to track what type of confirmation (delete/disable)
   });
 
   // Función para cerrar diálogo
@@ -63,24 +64,46 @@ const TareasDocente = () => {
     setDialogConfig({
       isOpen: true,
       tareaId,
-      title: 'Deshabilitar Tarea',
-      message: `¿Está seguro de que desea deshabilitar la tarea "${tareaTitulo}"? Los estudiantes no podrán verla.`,
+      title: 'Eliminar Tarea',
+      message: `¿Está seguro de que desea eliminar permanentemente la tarea "${tareaTitulo}"? Esta acción no se puede deshacer.`,
+      action: 'delete' // Indicate this is a delete action
     });
   };
 
-  // Función para ejecutar la deshabilitación de la tarea
-  const handleConfirmDelete = async () => {
+  // Abrir diálogo de confirmación de deshabilitación
+  const confirmDisable = (tareaId, tareaTitulo) => {
+    setDialogConfig({
+      isOpen: true,
+      tareaId,
+      title: 'Deshabilitar Tarea',
+      message: `¿Está seguro de que desea deshabilitar la tarea "${tareaTitulo}"? Los estudiantes no podrán verla.`,
+      action: 'disable' // Indicate this is a disable action
+    });
+  };
+
+  // Función para ejecutar la acción confirmada
+  const handleConfirmAction = async () => {
     try {
-      await api.deshabilitarTarea(dialogConfig.tareaId);
-      setTareas(tareas.map(tarea => 
-        tarea.id === dialogConfig.tareaId 
-          ? {...tarea, habilitada: false}
-          : tarea
-      ));
-      showAlert('success', 'Tarea deshabilitada correctamente');
+      if (dialogConfig.action === 'disable') {
+        // Deshabilitar tarea
+        await api.deshabilitarTarea(dialogConfig.tareaId);
+        setTareas(tareas.map(tarea => 
+          tarea.id === dialogConfig.tareaId 
+            ? {...tarea, habilitada: false}
+            : tarea
+        ));
+        showAlert('success', 'Tarea deshabilitada correctamente');
+      } else if (dialogConfig.action === 'delete') {
+        // Eliminar tarea
+        await api.eliminarTarea(dialogConfig.tareaId);
+        setTareas(tareas.filter(tarea => tarea.id !== dialogConfig.tareaId));
+        showAlert('success', 'Tarea eliminada correctamente');
+      }
       closeDialog();
     } catch (err) {
-      showAlert('error', err.message || 'Error al deshabilitar tarea');
+      const errorMsg = err.response?.data?.message || err.message || 
+        (dialogConfig.action === 'disable' ? 'Error al deshabilitar tarea' : 'Error al eliminar tarea');
+      showAlert('error', errorMsg);
       console.error(err);
       closeDialog();
     }
@@ -164,10 +187,10 @@ const TareasDocente = () => {
         isOpen={dialogConfig.isOpen}
         onClose={closeDialog}
         title={dialogConfig.title}
-        onConfirm={handleConfirmDelete}
-        confirmText="Deshabilitar"
+        onConfirm={handleConfirmAction}
+        confirmText={dialogConfig.action === 'delete' ? 'Eliminar' : 'Deshabilitar'}
         cancelText="Cancelar"
-        type="warning"
+        type={dialogConfig.action === 'delete' ? 'danger' : 'warning'}
       >
         <p>{dialogConfig.message}</p>
       </Dialog>
@@ -304,12 +327,18 @@ const TareasDocente = () => {
                       </Link>
                       {tarea.habilitada && (
                         <button 
-                          onClick={() => confirmDelete(tarea.id, tarea.titulo)} 
-                          className="text-red hover:text-red-dark hover:underline focus:outline-none"
+                          onClick={() => confirmDisable(tarea.id, tarea.titulo)} 
+                          className="text-yellow-600 hover:text-yellow-800 mr-4 hover:underline focus:outline-none"
                         >
                           Deshabilitar
                         </button>
                       )}
+                      <button 
+                        onClick={() => confirmDelete(tarea.id, tarea.titulo)} 
+                        className="text-red hover:text-red-dark hover:underline focus:outline-none"
+                      >
+                        Eliminar
+                      </button>
                     </td>
                   </tr>
                 ))}

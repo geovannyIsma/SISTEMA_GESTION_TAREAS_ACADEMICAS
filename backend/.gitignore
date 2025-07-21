@@ -133,3 +133,7 @@ dist
 # prisma ORM
 /generated/prisma
 /prisma/migrations
+
+
+# Archivos tareas
+/uploads/*
