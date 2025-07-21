@@ -22,7 +22,7 @@ const Header = ({ toggleSidebar }) => {
   const userInitials = userFullName.charAt(0).toUpperCase();
 
   return (
-    <header className="bg-white shadow-sm z-40 relative">
+    <header className="bg-gray-50 shadow-sm z-40 relative">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -61,7 +61,7 @@ const Header = ({ toggleSidebar }) => {
 
             <div className="ml-4 flex items-center md:ml-6">
               <button 
-                className="p-1 rounded-full text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="p-1 rounded-full text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 aria-label="Notificaciones"
               >
                 <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -74,10 +74,10 @@ const Header = ({ toggleSidebar }) => {
                 <div>
                   <button 
                     onClick={toggleDropdown}
-                    className="max-w-xs bg-white rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="max-w-xs bg-gray-50 rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                   >
                     <span className="sr-only">Abrir menú de usuario</span>
-                    <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-medium">
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-gray-50 font-medium">
                       {userInitials}
                     </div>
                   </button>
@@ -85,7 +85,7 @@ const Header = ({ toggleSidebar }) => {
                 
                 {isDropdownOpen && (
                   <div 
-                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-gray-50 ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
                   >
                     <div className="block px-4 py-2 text-xs text-gray-500">
                       Sesión iniciada como
@@ -93,7 +93,7 @@ const Header = ({ toggleSidebar }) => {
                     <div className="block px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
                       <div className="font-medium">{userFullName}</div>
                       <div className="text-xs text-gray-600">{user?.email}</div>
-                      <div className="text-xs mt-1 inline-block px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                      <div className="text-xs mt-1 inline-block px-2 py-0.5 rounded-full bg-primary-100 text-primary-800">
                         {user?.role === 'ADMINISTRADOR' ? 'Administrador' : 
                          user?.role === 'DOCENTE' ? 'Docente' : 
                          user?.role === 'ESTUDIANTE' ? 'Estudiante' : 'Observador'}

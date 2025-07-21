@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/* Sistema de Gestión de Tareas Académicas - Global Styles */
+
+@theme{
+    /* Colores Primarios */
+  --color-primary: #4f46e5;
+  --color-primary-light: #6366f1;
+  --color-primary-dark: #4338ca;
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-800: #3730a3;
+
+  /* Colores Secundarios */
+  --color-blue: #3b82f6;
+  --color-blue-light: #60a5fa;
+  --color-blue-dark: #2563eb;
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  
+  --color-green: #10b981;
+  --color-green-light: #34d399;
+  --color-green-dark: #059669;
+  --color-green-50: #ecfdf5;
+  --color-green-100: #d1fae5;
+  
+  --color-yellow: #f59e0b;
+  --color-yellow-light: #fbbf24;
+  --color-yellow-dark: #d97706;
+  --color-yellow-50: #fffbeb;
+  --color-yellow-100: #fef3c7;
+  
+  --color-red: #ef4444;
+  --color-red-light: #f87171;
+  --color-red-dark: #dc2626;
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  
+  --color-purple: #8b5cf6;
+  --color-purple-light: #a78bfa;
+  --color-purple-dark: #7c3aed;
+  --color-purple-50: #f5f3ff;
+  --color-purple-100: #ede9fe;
+  
+  --color-amber: #f59e0b;
+  --color-amber-light: #fbbf24;
+  --color-amber-dark: #d97706;
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+
+  /* Colores Neutros */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+    
+  /* Tipografía */
+  --font-family-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-heading: var(--font-family-sans);
+}

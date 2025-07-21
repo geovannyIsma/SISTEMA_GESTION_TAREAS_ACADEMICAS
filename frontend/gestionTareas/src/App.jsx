@@ -5,10 +5,13 @@ import GlobalAlert from './components/GlobalAlert';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './layout/AdminLayout';
 import Dashboard from './pages/Dashboard';
+import DashboardAdmin from './pages/admin/DashboardAdmin';
+import DashboardEstudiante from './pages/estudiante/DashboardEstudiante';
 import UsersList from './pages/users/UsersList';
 import UserForm from './pages/users/UserForm';
 import Login from './pages/Login';
 import TareasDocente from './pages/docente/TareasDocente';
+import DashboardDocente from './pages/docente/DashboardDocente';
 import CursosList from './pages/cursos/CursosList';
 import CursoForm from './pages/cursos/CursoForm';
 import AsignaturasList from './pages/asignaturas/AsignaturasList';
@@ -32,14 +35,21 @@ function App() {
           
           {/* Rutas protegidas */}
           <Route element={<ProtectedRoute />}>
+            {/* Ruta principal - redirige según rol */}
             <Route path="/dashboard" element={
               <AdminLayout>
                 <Dashboard />
               </AdminLayout>
             } />
             
-            {/* Rutas de administración de usuarios (solo admin) */}
+            {/* Rutas específicas para admin */}
             <Route element={<ProtectedRoute requireAdmin={true} />}>
+              <Route path="/admin/dashboard" element={
+                <AdminLayout>
+                  <DashboardAdmin />
+                </AdminLayout>
+              } />
+              
               <Route path="/users" element={
                 <AdminLayout>
                   <UsersList />
@@ -92,6 +102,11 @@ function App() {
             </Route>
             
             {/* Rutas para docentes */}
+            <Route path="/docente/dashboard" element={
+              <AdminLayout>
+                <DashboardDocente />
+              </AdminLayout>
+            } />
             <Route path="/docente/tareas" element={
               <AdminLayout>
                 <TareasDocente />
@@ -112,29 +127,35 @@ function App() {
                 <AsignarTarea />
               </AdminLayout>
             } />
+            
+            {/* Rutas para estudiantes */}
+            <Route path="/estudiante/dashboard" element={
+              <AdminLayout>
+                <DashboardEstudiante />
+              </AdminLayout>
+            } />
+            <Route path="/estudiante/tareas" element={
+              <AdminLayout>
+                <TareasEstudiante />
+              </AdminLayout>
+            } />
+            <Route path="/estudiante/cursos" element={
+              <AdminLayout>
+                <CursosEstudiante />
+              </AdminLayout>
+            } />
+            <Route path="/estudiante/cursos/:id" element={
+              <AdminLayout>
+                <CursoTareasEstudiante />
+              </AdminLayout>
+            } />
+            <Route path="/estudiante/tareas/:id" element={
+              <AdminLayout>
+                <TareaDetalleEstudiante />
+              </AdminLayout>
+            } />
           </Route>
           
-          {/* Rutas para estudiantes */}
-          <Route path="/estudiante/tareas" element={
-            <AdminLayout>
-              <TareasEstudiante />
-            </AdminLayout>
-          } />
-          <Route path="/estudiante/cursos" element={
-            <AdminLayout>
-              <CursosEstudiante />
-            </AdminLayout>
-          } />
-          <Route path="/estudiante/cursos/:id" element={
-            <AdminLayout>
-              <CursoTareasEstudiante />
-            </AdminLayout>
-          } />
-          <Route path="/estudiante/tareas/:id" element={
-            <AdminLayout>
-              <TareaDetalleEstudiante />
-            </AdminLayout>
-          } />
           {/* Redirección por defecto */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
