@@ -53,16 +53,16 @@ const DashboardEstudiante = () => {
       
       {loading ? (
         <div className="flex justify-center items-center py-6">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
       ) : (
         <>
           {/* Student statistics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+            <div className="bg-gray-50 rounded-lg shadow overflow-hidden border border-gray-100">
               <div className="p-5">
                 <div className="flex items-center">
-                  <div className="bg-indigo-100 text-indigo-800 rounded-full p-3">
+                  <div className="bg-primary-100 text-primary-800 rounded-full p-3">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
@@ -75,7 +75,7 @@ const DashboardEstudiante = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+            <div className="bg-gray-50 rounded-lg shadow overflow-hidden border border-gray-100">
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="bg-blue-100 text-blue-800 rounded-full p-3">
@@ -91,7 +91,7 @@ const DashboardEstudiante = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+            <div className="bg-gray-50 rounded-lg shadow overflow-hidden border border-gray-100">
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="bg-yellow-100 text-yellow-800 rounded-full p-3">
@@ -107,7 +107,7 @@ const DashboardEstudiante = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+            <div className="bg-gray-50 rounded-lg shadow overflow-hidden border border-gray-100">
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="bg-red-100 text-red-800 rounded-full p-3">
@@ -123,7 +123,7 @@ const DashboardEstudiante = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+            <div className="bg-gray-50 rounded-lg shadow overflow-hidden border border-gray-100">
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="bg-green-100 text-green-800 rounded-full p-3">
@@ -143,10 +143,10 @@ const DashboardEstudiante = () => {
           {/* Main dashboard sections */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Upcoming deadlines */}
-            <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
+            <div className="bg-gray-50 shadow-sm rounded-lg overflow-hidden border border-gray-100">
               <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
                 <h3 className="text-lg font-medium text-gray-900">Upcoming Deadlines</h3>
-                <Link to="/estudiante/cursos" className="text-sm text-indigo-600 hover:text-indigo-900 font-medium">
+                <Link to="/estudiante/cursos" className="text-sm text-primary hover:text-primary-dark font-medium">
                   View All
                 </Link>
               </div>
@@ -173,7 +173,7 @@ const DashboardEstudiante = () => {
                             <div className="flex-1 min-w-0">
                               <Link 
                                 to={`/estudiante/tareas/${tarea.id}`}
-                                className="text-sm font-medium text-indigo-600 hover:text-indigo-900 truncate"
+                                className="text-sm font-medium text-primary hover:text-primary-dark truncate"
                               >
                                 {tarea.titulo}
                               </Link>
@@ -214,10 +214,10 @@ const DashboardEstudiante = () => {
             </div>
             
             {/* My courses */}
-            <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
+            <div className="bg-gray-50 shadow-sm rounded-lg overflow-hidden border border-gray-100">
               <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
                 <h3 className="text-lg font-medium text-gray-900">My Courses</h3>
-                <Link to="/estudiante/cursos" className="text-sm text-indigo-600 hover:text-indigo-900 font-medium">
+                <Link to="/estudiante/cursos" className="text-sm text-primary hover:text-primary-dark font-medium">
                   View All
                 </Link>
               </div>
@@ -262,7 +262,7 @@ const DashboardEstudiante = () => {
           </div>
           
           {/* Quick actions */}
-          <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
+          <div className="bg-gray-50 shadow-sm rounded-lg overflow-hidden border border-gray-100">
             <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">Quick Actions</h3>
             </div>
@@ -270,7 +270,7 @@ const DashboardEstudiante = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Link 
                   to="/estudiante/cursos" 
-                  className="flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-50 bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
                   <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
@@ -281,7 +281,7 @@ const DashboardEstudiante = () => {
                 {stats.tareasPendientes > 0 ? (
                   <Link 
                     to="/estudiante/cursos" 
-                    className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                   >
                     <svg className="mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
@@ -298,7 +298,7 @@ const DashboardEstudiante = () => {
                 )}
                 
                 <button 
-                  className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                   onClick={() => window.print()}
                 >
                   <svg className="mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -312,7 +312,7 @@ const DashboardEstudiante = () => {
           
           {/* Academic performance */}
           {stats.promedioCalificaciones > 0 && (
-            <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100 mt-6">
+            <div className="bg-gray-50 shadow-sm rounded-lg overflow-hidden border border-gray-100 mt-6">
               <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">My Academic Performance</h3>
               </div>
@@ -320,7 +320,7 @@ const DashboardEstudiante = () => {
                 <div className="flex items-center justify-between">
                   <div className="text-center">
                     <h4 className="text-sm text-gray-500 mb-1">Overall Average</h4>
-                    <div className="text-3xl font-bold text-indigo-600">{stats.promedioCalificaciones.toFixed(1)}</div>
+                    <div className="text-3xl font-bold text-primary">{stats.promedioCalificaciones.toFixed(1)}</div>
                     <p className="text-xs text-gray-500 mt-1">Out of 10</p>
                   </div>
                   
@@ -328,7 +328,7 @@ const DashboardEstudiante = () => {
                   
                   <div className="text-center">
                     <h4 className="text-sm text-gray-500 mb-1">Completed Tasks</h4>
-                    <div className="text-3xl font-bold text-green-600">
+                    <div className="text-3xl font-bold text-green">
                       {stats.totalTareas > 0 ? 
                         `${Math.round((stats.totalTareas - stats.tareasPendientes - stats.tareasVencidas) / stats.totalTareas * 100)}%` : 
                         '0%'
@@ -345,17 +345,17 @@ const DashboardEstudiante = () => {
                     <h4 className="text-sm text-gray-500 mb-1">Current Status</h4>
                     {stats.tareasPendientes > 0 ? (
                       <div className="flex items-center justify-center">
-                        <div className="w-3 h-3 rounded-full bg-yellow-400 mr-2"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow mr-2"></div>
                         <span className="text-sm font-medium">Pending Tasks</span>
                       </div>
                     ) : stats.tareasVencidas > 0 ? (
                       <div className="flex items-center justify-center">
-                        <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                        <div className="w-3 h-3 rounded-full bg-red mr-2"></div>
                         <span className="text-sm font-medium">Overdue Tasks</span>
                       </div>
                     ) : (
                       <div className="flex items-center justify-center">
-                        <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                        <div className="w-3 h-3 rounded-full bg-green mr-2"></div>
                         <span className="text-sm font-medium">All Caught Up</span>
                       </div>
                     )}

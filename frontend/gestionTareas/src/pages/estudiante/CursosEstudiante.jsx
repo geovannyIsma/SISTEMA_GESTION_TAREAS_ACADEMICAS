@@ -38,7 +38,7 @@ const CursosEstudiante = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Mis Cursos</h1>
       </div>
 
-      <div className="bg-white shadow-sm overflow-hidden rounded-lg border border-gray-100">
+      <div className="bg-gray-50 shadow-sm overflow-hidden rounded-lg border border-gray-100">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <div className="w-full md:w-1/3">
@@ -53,7 +53,7 @@ const CursosEstudiante = () => {
                   type="text"
                   id="search"
                   placeholder="Buscar por nombre, código o asignatura"
-                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                  className="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -64,7 +64,7 @@ const CursosEstudiante = () => {
 
         {loading ? (
           <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -80,7 +80,7 @@ const CursosEstudiante = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
                 {filteredCursos.map((curso) => (
                   <Link to={`/estudiante/cursos/${curso.id}`} key={curso.id} 
-                    className="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+                    className="bg-gray-50 border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
                     <div className="px-6 py-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">

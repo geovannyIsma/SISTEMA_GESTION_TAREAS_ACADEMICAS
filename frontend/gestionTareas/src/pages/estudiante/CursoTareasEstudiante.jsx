@@ -88,7 +88,7 @@ const CursoTareasEstudiante = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -98,7 +98,7 @@ const CursoTareasEstudiante = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
           <div className="flex items-center mb-1">
-            <Link to="/estudiante/cursos" className="text-indigo-600 hover:text-indigo-900 mr-2">
+            <Link to="/estudiante/cursos" className="text-primary hover:text-primary-dark mr-2">
               ← Volver a mis cursos
             </Link>
           </div>
@@ -111,7 +111,7 @@ const CursoTareasEstudiante = () => {
         </div>
       </div>
 
-      <div className="bg-white shadow-sm overflow-hidden rounded-lg border border-gray-100">
+      <div className="bg-gray-50 shadow-sm overflow-hidden rounded-lg border border-gray-100">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Tareas del curso</h2>
           <p className="mt-1 max-w-2xl text-sm text-gray-500">
@@ -137,7 +137,7 @@ const CursoTareasEstudiante = () => {
                   <Link 
                     to={`/estudiante/tareas/${tarea.id}`} 
                     key={tarea.id}
-                    className="block bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
+                    className="block bg-gray-50 border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
                   >
                     <div className="px-6 py-4">
                       <div className="flex justify-between items-start mb-3">
@@ -170,7 +170,7 @@ const CursoTareasEstudiante = () => {
                       </div>
                       
                       <div className="mt-4 flex justify-end">
-                        <span className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                        <span className="inline-flex items-center text-sm font-medium text-primary hover:text-primary-dark">
                           Ver detalles →
                         </span>
                       </div>
