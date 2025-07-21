@@ -58,10 +58,8 @@ const AsignaturaForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Only sanitize name and codigo fields, leave description as-is to preserve spaces
-    const sanitizedValue = name === 'descripcion' 
-      ? value  // Don't sanitize description to preserve spaces
-      : sanitizeInput(value);
+    // Preserve spaces in all fields but still sanitize for other unwanted characters
+    const sanitizedValue = value.replace(/[^\w\s.-]/g, '');
     setFormData({ ...formData, [name]: sanitizedValue });
   };
 
