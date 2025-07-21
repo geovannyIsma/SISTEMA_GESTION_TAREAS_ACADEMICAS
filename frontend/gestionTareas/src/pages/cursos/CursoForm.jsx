@@ -188,12 +188,7 @@ const CursoForm = () => {
   // User management functions
   const openAddDocentesModal = async () => {
     try {
-      // Filter out docentes that are already selected (for new course) 
-      // or already assigned (for edit mode)
-      const availableDocentes = isEditMode
-        ? allDocentes.filter(docente => !docentes.some(d => d.id === docente.id))
-        : allDocentes.filter(docente => !selectedDocentes.includes(docente.id));
-      
+      // No longer filter out selected docentes
       setAssigningDocentes(true);
     } catch (error) {
       showAlert('error', error.message || 'Error al cargar docentes');
@@ -203,12 +198,7 @@ const CursoForm = () => {
 
   const openAddEstudiantesModal = async () => {
     try {
-      // Filter out estudiantes that are already selected (for new course) 
-      // or already assigned (for edit mode)
-      const availableEstudiantes = isEditMode
-        ? allEstudiantes.filter(estudiante => !estudiantes.some(e => e.id === estudiante.id))
-        : allEstudiantes.filter(estudiante => !selectedEstudiantes.includes(estudiante.id));
-        
+      // No longer filter out selected estudiantes
       setAssigningEstudiantes(true);
     } catch (error) {
       showAlert('error', error.message || 'Error al cargar estudiantes');
@@ -689,9 +679,9 @@ const CursoForm = () => {
         <UserSelector
           title={isEditMode ? "Añadir docentes al curso" : "Seleccionar docentes para el curso"}
           users={isEditMode 
-            ? allDocentes.filter(docente => !docentes.some(d => d.id === docente.id)) 
-            : allDocentes.filter(docente => !selectedDocentes.includes(docente.id))}
-          selectedIds={selectedDocentes}
+            ? allDocentes 
+            : allDocentes}
+          selectedIds={isEditMode ? docentes.map(d => d.id) : selectedDocentes}
           onToggleSelect={toggleSelectDocente}
           onCancel={() => setAssigningDocentes(false)}
           onConfirm={handleAddDocentesConfirm}
@@ -707,9 +697,9 @@ const CursoForm = () => {
         <UserSelector
           title={isEditMode ? "Añadir estudiantes al curso" : "Seleccionar estudiantes para el curso"}
           users={isEditMode 
-            ? allEstudiantes.filter(estudiante => !estudiantes.some(e => e.id === estudiante.id))
-            : allEstudiantes.filter(estudiante => !selectedEstudiantes.includes(estudiante.id))}
-          selectedIds={selectedEstudiantes}
+            ? allEstudiantes 
+            : allEstudiantes}
+          selectedIds={isEditMode ? estudiantes.map(e => e.id) : selectedEstudiantes}
           onToggleSelect={toggleSelectEstudiante}
           onCancel={() => setAssigningEstudiantes(false)}
           onConfirm={handleAddEstudiantesConfirm}

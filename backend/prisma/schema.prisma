@@ -151,6 +151,7 @@ model ArchivoEntrega {
   entregaId        Int
   entrega          Entrega         @relation(fields: [entregaId], references: [id])
   url              String
+  nombre           String          @default("")
   tipo             String          // PDF, ZIP, IMG, OTRO
   sizeMB           Float
 }

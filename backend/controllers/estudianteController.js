@@ -339,73 +339,17 @@ const enviarEntregaTarea = async (req, res) => {
     const estudianteId = req.user.id;
     const { comentario } = req.body;
     
-    console.log(`Procesando entrega para tarea: ${tareaId}, estudiante: ${estudianteId}`);
-    
-    // Verificar si existe un archivo en la solicitud
-    let archivoInfo = null;
-    if (req.file) {
-      console.log(`Archivo recibido: ${req.file.filename}, tamaño: ${req.file.size} bytes`);
-      // Usar path relativo para almacenar en DB, con formato Unix para evitar problemas en diferentes OS
-      const archivoUrl = req.file.path.replace(/\\/g, '/');
-      
-      // Si el path incluye el directorio raíz, quitar para tener un path relativo
-      const url = archivoUrl.includes('uploads/') 
-        ? archivoUrl.substring(archivoUrl.indexOf('uploads/'))
-        : archivoUrl;
-      
-      // Determinar tipo de archivo basado en la extensión
-      const extension = req.file.originalname.split('.').pop().toLowerCase();
-      let tipo = 'OTRO';
-      
-      if (['pdf'].includes(extension)) {
-        tipo = 'PDF';
-      } else if (['zip', 'rar', '7z'].includes(extension)) {
-        tipo = 'ZIP';
-      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
-        tipo = 'IMG';
-      }
-      
-      // Calcular tamaño en MB
-      const sizeMB = req.file.size / (1024 * 1024);
-      
-      archivoInfo = {
-        url,
-        tipo,
-        sizeMB
-      };
-      
-      console.log(`Información de archivo preparada: `, archivoInfo);
-    } else {
-      console.log('No se recibió ningún archivo');
-    }
-    
-    // Verificar que la tarea exista
+    // Verificar si la tarea existe
     const tarea = await prisma.tarea.findUnique({
       where: { id: tareaId }
     });
     
     if (!tarea) {
-      console.log(`Tarea ${tareaId} no encontrada`);
       return res.status(404).json({ status: 'error', message: 'Tarea no encontrada' });
     }
     
-    // Verificar que la tarea esté habilitada
-    if (!tarea.habilitada) {
-      console.log(`Tarea ${tareaId} no está habilitada`);
-      return res.status(400).json({ status: 'error', message: 'La tarea no está disponible para entrega' });
-    }
-    
-    // Verificar que no haya pasado la fecha límite o si permite entregas tardías
-    const fechaActual = new Date();
-    const fueraDePlazo = fechaActual > new Date(tarea.fechaEntrega);
-    
-    if (fueraDePlazo && !tarea.permitirEntregasTardias) {
-      console.log(`Entrega fuera de plazo para tarea ${tareaId} y no se permiten entregas tardías`);
-      return res.status(400).json({ status: 'error', message: 'La fecha límite para esta tarea ha pasado' });
-    }
-    
-    // Verificar que el estudiante tenga acceso a esta tarea
-    const tieneAcceso = await prisma.tareaAsignacion.findFirst({
+    // Verificar si el estudiante está asignado a la tarea
+    const asignacion = await prisma.tareaAsignacion.findFirst({
       where: {
         tareaId,
         OR: [
@@ -421,102 +365,110 @@ const enviarEntregaTarea = async (req, res) => {
       }
     });
     
-    if (!tieneAcceso) {
-      console.log(`Estudiante ${estudianteId} no tiene acceso a la tarea ${tareaId}`);
-      return res.status(403).json({ status: 'error', message: 'No tienes acceso a esta tarea' });
+    if (!asignacion) {
+      return res.status(403).json({ status: 'error', message: 'No tienes permiso para entregar esta tarea' });
     }
     
-    // Verificar si ya existe una entrega para actualizarla
-    const entregaExistente = await prisma.entrega.findFirst({
+    // Verificar si ya existe una entrega
+    let entrega = await prisma.entrega.findFirst({
       where: {
         tareaId,
         estudianteId
-      },
-      include: {
-        archivos: true
       }
     });
     
-    let entrega;
+    // Si ya existe una entrega y está calificada, no permitir modificarla
+    if (entrega && entrega.calificacion !== null) {
+      return res.status(400).json({ status: 'error', message: 'No se puede modificar una entrega ya calificada' });
+    }
     
-    // Usar una transacción para garantizar la integridad de los datos
-    await prisma.$transaction(async (prisma) => {
-      if (entregaExistente) {
-        console.log(`Actualizando entrega existente para tarea ${tareaId}, estudiante ${estudianteId}`);
-        // Actualizar entrega existente
-        entrega = await prisma.entrega.update({
-          where: { id: entregaExistente.id },
-          data: {
-            comentario: comentario !== undefined ? comentario : entregaExistente.comentario,
-            fecha: new Date(),
-            fueraDePlazo: fueraDePlazo
-          }
-        });
-        
-        // Si hay un nuevo archivo, agregar a la colección de archivos
-        if (archivoInfo) {
-          await prisma.archivoEntrega.create({
+    // Verificar si es una entrega fuera de plazo
+    const ahora = new Date();
+    const fueraDePlazo = ahora > new Date(tarea.fechaEntrega);
+    
+    let archivoUrl = null;
+    
+    // Procesar archivo si se proporciona
+    if (req.file) {
+      // Guardar ruta relativa del archivo
+      archivoUrl = `/uploads/entregas/${req.file.filename}`;
+      
+      // Calcular tamaño en MB
+      const fileSizeMB = req.file.size / (1024 * 1024);
+      
+      // Determinar tipo de archivo
+      const fileExt = path.extname(req.file.originalname).toLowerCase();
+      let fileType = 'OTRO';
+      
+      if (['.pdf'].includes(fileExt)) fileType = 'PDF';
+      else if (['.zip', '.rar', '.7z'].includes(fileExt)) fileType = 'ZIP';
+      else if (['.jpg', '.jpeg', '.png', '.gif', '.bmp'].includes(fileExt)) fileType = 'IMG';
+      else if (['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'].includes(fileExt)) fileType = 'DOC';
+      
+      // Usar transacción para garantizar consistencia
+      await prisma.$transaction(async (prisma) => {
+        // Si no existe entrega, crearla
+        if (!entrega) {
+          entrega = await prisma.entrega.create({
             data: {
-              entregaId: entregaExistente.id,
-              url: archivoInfo.url,
-              tipo: archivoInfo.tipo,
-              sizeMB: archivoInfo.sizeMB
+              tareaId,
+              estudianteId,
+              comentario: comentario || null,
+              fueraDePlazo,
+              fecha: ahora
             }
           });
+        } else {
+          // Actualizar comentario si hay cambios
+          if (comentario !== undefined) {
+            await prisma.entrega.update({
+              where: { id: entrega.id },
+              data: { comentario: comentario || null }
+            });
+          }
         }
-      } else {
-        console.log(`Creando nueva entrega para tarea ${tareaId}, estudiante ${estudianteId}`);
         
-        // Si no hay archivo y es una nueva entrega, exigir el archivo
-        if (!archivoInfo) {
-          console.log('Error: Nueva entrega sin archivo');
-          throw new Error('Es necesario adjuntar un archivo para la entrega');
-        }
-        
-        // Crear nueva entrega con archivos relacionados
-        entrega = await prisma.entrega.create({
+        // Crear registro de archivo
+        await prisma.archivoEntrega.create({
           data: {
-            tareaId,
-            estudianteId,
-            comentario,
-            fecha: new Date(),
-            fueraDePlazo,
-            archivos: {
-              create: [
-                {
-                  url: archivoInfo.url,
-                  tipo: archivoInfo.tipo,
-                  sizeMB: archivoInfo.sizeMB
-                }
-              ]
-            }
-          },
-          include: {
-            archivos: true
+            entregaId: entrega.id,
+            url: archivoUrl,
+            nombre: req.file.originalname, // Save the original filename
+            tipo: fileType,
+            sizeMB: fileSizeMB
           }
         });
-      }
-    });
+      });
+    } else if (!entrega) {
+      // Si no hay archivo pero tampoco existe entrega previa, crear entrega solo con comentario
+      entrega = await prisma.entrega.create({
+        data: {
+          tareaId,
+          estudianteId,
+          comentario: comentario || null,
+          fueraDePlazo,
+          fecha: ahora
+        }
+      });
+    } else if (comentario !== undefined) {
+      // Si ya existe entrega y solo se actualiza el comentario
+      await prisma.entrega.update({
+        where: { id: entrega.id },
+        data: { comentario: comentario || null }
+      });
+    } else {
+      // No hay archivo ni comentario nuevo para una entrega existente
+      return res.status(400).json({ status: 'error', message: 'No se ha proporcionado ningún cambio en la entrega' });
+    }
     
-    // Recuperar la entrega actualizada con sus archivos
-    const entregaCompleta = await prisma.entrega.findUnique({
-      where: { id: entrega.id },
-      include: { archivos: true }
-    });
-    
-    console.log(`Entrega procesada correctamente: ID ${entrega.id}`);
     res.status(200).json({
       status: 'success',
-      message: entregaExistente ? 'Entrega actualizada correctamente' : 'Entrega enviada correctamente',
-      data: entregaCompleta
+      message: entrega ? 'Entrega actualizada correctamente' : 'Tarea entregada correctamente',
+      data: { entregaId: entrega.id }
     });
   } catch (error) {
-    console.error('Error detallado al procesar entrega:', error);
-    res.status(500).json({ 
-      status: 'error', 
-      message: 'Error al procesar la entrega',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    console.error('Error en la entrega de tarea:', error);
+    res.status(500).json({ status: 'error', message: 'Error en el servidor al procesar la entrega' });
   }
 };
 

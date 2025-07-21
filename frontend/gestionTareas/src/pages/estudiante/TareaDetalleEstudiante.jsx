@@ -4,6 +4,9 @@ import api from '../../services/api';
 import { useAlert } from '../../context/AlertContext';
 import { useAuth } from '../../context/AuthContext';
 
+// API base URL for file access
+const API_BASE_URL = 'http://localhost:3000';
+
 const TareaDetalleEstudiante = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -411,7 +414,9 @@ const TareaDetalleEstudiante = () => {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                 </svg>
                                 <a 
-                                  href={entrega.archivoUrl} 
+                                  href={entrega.archivoUrl.startsWith('http') ? 
+                                    entrega.archivoUrl : 
+                                    `${API_BASE_URL}/${entrega.archivoUrl.replace(/^\//,'')}`} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="text-sm text-blue-700 hover:text-blue-900 font-medium"
@@ -433,12 +438,14 @@ const TareaDetalleEstudiante = () => {
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                     </svg>
                                     <a 
-                                      href={archivo.url.startsWith('/') ? archivo.url : `/${archivo.url}`}
+                                      href={archivo.url.startsWith('http') ? 
+                                        archivo.url : 
+                                        `${API_BASE_URL}/${archivo.url.replace(/^\//,'')}`}
                                       target="_blank" 
                                       rel="noopener noreferrer"
                                       className="text-sm text-blue-700 hover:text-blue-900 font-medium"
                                     >
-                                      {`${archivo.tipo || 'Archivo'} (${archivo.sizeMB ? `${archivo.sizeMB.toFixed(2)} MB` : 'Tamaño desconocido'})`}
+                                      {`${archivo.nombre || 'Archivo'} ${archivo.tipo || 'Archivo'} (${archivo.sizeMB ? `${archivo.sizeMB.toFixed(2)} MB` : 'Tamaño desconocido'})`}
                                     </a>
                                   </div>
                                   

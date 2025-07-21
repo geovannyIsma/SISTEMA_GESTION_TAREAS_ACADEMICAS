@@ -15,6 +15,11 @@ const UserSelector = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const colorClasses = {
+    primary: {
+      checkbox: "text-indigo-600 border-gray-300 rounded focus:ring-indigo-500",
+      button: "bg-indigo-600 text-white rounded-md hover:bg-indigo-700",
+      selected: selectedIds.length === 0 ? 'Seleccione usuarios' : `Añadir ${selectedIds.length} usuarios`
+    },
     indigo: {
       checkbox: "text-indigo-600 border-gray-300 rounded focus:ring-indigo-500",
       button: "bg-indigo-600 text-white rounded-md hover:bg-indigo-700",
@@ -27,7 +32,8 @@ const UserSelector = ({
     }
   };
 
-  const colors = colorClasses[primaryColor];
+  // Use the color specified or fall back to indigo if the specified color doesn't exist
+  const colors = colorClasses[primaryColor] || colorClasses.indigo;
   
   // Filter users by search term
   const filteredUsers = users.filter(user => {
