@@ -3,14 +3,14 @@
 /* Sistema de Gestión de Tareas Académicas - Global Styles */
 
 @theme{
-    /* Colores Primarios */
-  --color-primary: #4f46e5;
-  --color-primary-light: #6366f1;
-  --color-primary-dark: #4338ca;
-  --color-primary-50: #eef2ff;
-  --color-primary-100: #e0e7ff;
-  --color-primary-200: #c7d2fe;
-  --color-primary-800: #3730a3;
+  /* Colores Primarios (Azules) */
+  --color-primary: #2563eb;           /* Azul base */
+  --color-primary-light: #3b82f6;      /* Azul más claro */
+  --color-primary-dark: #1d4ed8;       /* Azul más oscuro */
+  --color-primary-50: #eff6ff;         /* Azul muy tenue */
+  --color-primary-100: #dbeafe;        
+  --color-primary-200: #bfdbfe;
+  --color-primary-800: #1e40af;
 
   /* Colores Secundarios */
   --color-blue: #3b82f6;
