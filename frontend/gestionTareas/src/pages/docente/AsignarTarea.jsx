@@ -131,7 +131,7 @@ const AsignarTarea = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -170,7 +170,7 @@ const AsignarTarea = () => {
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    className="form-radio h-4 w-4 text-indigo-600"
+                    className="form-radio h-4 w-4 text-primary"
                     value="curso"
                     checked={tipoAsignacion === 'curso'}
                     onChange={() => setTipoAsignacion('curso')}
@@ -180,7 +180,7 @@ const AsignarTarea = () => {
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    className="form-radio h-4 w-4 text-indigo-600"
+                    className="form-radio h-4 w-4 text-primary"
                     value="estudiante"
                     checked={tipoAsignacion === 'estudiante'}
                     onChange={() => setTipoAsignacion('estudiante')}
@@ -197,7 +197,7 @@ const AsignarTarea = () => {
               </label>
               <select
                 id="curso"
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                 value={selectedCursoId}
                 onChange={(e) => setSelectedCursoId(e.target.value)}
                 required={tipoAsignacion === 'curso'}
@@ -239,12 +239,12 @@ const AsignarTarea = () => {
                         {estudiantes.map(estudiante => (
                           <div
                             key={estudiante.id}
-                            className={`p-3 flex items-center hover:bg-gray-50 cursor-pointer ${selectedEstudianteId === estudiante.id ? 'bg-indigo-50' : ''}`}
+                            className={`p-3 flex items-center hover:bg-gray-50 cursor-pointer ${selectedEstudianteId === estudiante.id ? 'bg-primary-50' : ''}`}
                             onClick={() => setSelectedEstudianteId(estudiante.id)}
                           >
                             <input
                               type="radio"
-                              className="h-4 w-4 text-indigo-600 border-gray-300"
+                              className="h-4 w-4 text-primary border-gray-300"
                               checked={selectedEstudianteId === estudiante.id}
                               onChange={() => setSelectedEstudianteId(estudiante.id)}
                               id={`estudiante-${estudiante.id}`}
@@ -275,15 +275,15 @@ const AsignarTarea = () => {
             <button
               type="button"
               onClick={() => navigate('/docente/tareas')}
-              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-                submitting ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+              className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${
+                submitting ? 'bg-primary-light cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'
               }`}
             >
               {submitting ? 'Asignando...' : 'Asignar Tarea'}

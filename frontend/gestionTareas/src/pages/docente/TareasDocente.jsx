@@ -107,7 +107,7 @@ const TareasDocente = () => {
     // Calcular días restantes
     const diasRestantes = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
     
-    if (diasRestantes <= 3) return "bg-orange-100 text-orange-800"; // Próxima a vencer
+    if (diasRestantes <= 3) return "bg-yellow-100 text-yellow-800"; // Próxima a vencer
     return "bg-green-100 text-green-800"; // Con tiempo
   };
 
@@ -150,7 +150,7 @@ const TareasDocente = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Mis Tareas</h1>
         <Link 
           to="/docente/tareas/nueva"
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:ring-2 focus:ring-offset-2 focus:ring-primary"
         >
           <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
@@ -187,7 +187,7 @@ const TareasDocente = () => {
                   type="text"
                   id="search"
                   placeholder="Buscar por título o descripción"
-                  className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                  className="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -197,7 +197,7 @@ const TareasDocente = () => {
               <label htmlFor="estado" className="sr-only">Filtrar por estado</label>
               <select
                 id="estado"
-                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md"
                 value={filterEstado}
                 onChange={(e) => setFilterEstado(e.target.value)}
               >
@@ -211,7 +211,7 @@ const TareasDocente = () => {
 
         {loading ? (
           <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -265,7 +265,7 @@ const TareasDocente = () => {
                           href={tarea.archivoUrl} 
                           target="_blank" 
                           rel="noreferrer"
-                          className="text-indigo-600 hover:text-indigo-900 font-medium"
+                          className="text-primary hover:text-primary-dark font-medium"
                         >
                           Ver material
                         </a>
@@ -291,21 +291,21 @@ const TareasDocente = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link 
                         to={`/docente/tareas/${tarea.id}`} 
-                        className={`text-indigo-700 hover:text-indigo-900 mr-4 hover:underline ${!isTaskEditable(tarea) ? 'cursor-not-allowed opacity-60' : ''}`}
+                        className={`text-primary hover:text-primary-dark mr-4 hover:underline ${!isTaskEditable(tarea) ? 'cursor-not-allowed opacity-60' : ''}`}
                         onClick={(e) => handleEditClick(e, tarea)}
                       >
                         {isTaskEditable(tarea) ? 'Editar' : 'Ver'}
                       </Link>
                       <Link 
                         to={`/docente/tareas/${tarea.id}/asignar`} 
-                        className="text-blue-700 hover:text-blue-900 mr-4 hover:underline"
+                        className="text-blue hover:text-blue-dark mr-4 hover:underline"
                       >
                         Asignar
                       </Link>
                       {tarea.habilitada && (
                         <button 
                           onClick={() => confirmDelete(tarea.id, tarea.titulo)} 
-                          className="text-red-700 hover:text-red-900 hover:underline focus:outline-none"
+                          className="text-red hover:text-red-dark hover:underline focus:outline-none"
                         >
                           Deshabilitar
                         </button>

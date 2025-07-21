@@ -338,7 +338,7 @@ const CursoForm = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -365,7 +365,7 @@ const CursoForm = () => {
               </div>
               <button
                 onClick={() => confirmRemoveDocente(docente.id, docente.name || `${docente.firstName} ${docente.lastName}`)}
-                className="text-red-600 hover:text-red-800 text-sm"
+                className="text-red hover:text-red-dark text-sm"
               >
                 Eliminar
               </button>
@@ -398,7 +398,7 @@ const CursoForm = () => {
               </div>
               <button
                 onClick={() => confirmRemoveEstudiante(estudiante.id, estudiante.name || `${estudiante.firstName} ${estudiante.lastName}`)}
-                className="text-red-600 hover:text-red-800 text-sm"
+                className="text-red hover:text-red-dark text-sm"
               >
                 Eliminar
               </button>
@@ -444,7 +444,7 @@ const CursoForm = () => {
               onClick={() => setActiveTab('info')}
               className={`py-4 px-6 border-b-2 font-medium text-sm ${
                 activeTab === 'info' 
-                  ? 'border-indigo-500 text-indigo-600'
+                  ? 'border-primary text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -454,7 +454,7 @@ const CursoForm = () => {
               onClick={() => setActiveTab('docentes')}
               className={`py-4 px-6 border-b-2 font-medium text-sm ${
                 activeTab === 'docentes' 
-                  ? 'border-indigo-500 text-indigo-600'
+                  ? 'border-primary text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -464,7 +464,7 @@ const CursoForm = () => {
               onClick={() => setActiveTab('estudiantes')}
               className={`py-4 px-6 border-b-2 font-medium text-sm ${
                 activeTab === 'estudiantes' 
-                  ? 'border-indigo-500 text-indigo-600'
+                  ? 'border-primary text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -488,7 +488,7 @@ const CursoForm = () => {
                     name="nombre"
                     id="nombre"
                     required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                     value={formData.nombre}
                     onChange={handleChange}
                     maxLength={100}
@@ -504,7 +504,7 @@ const CursoForm = () => {
                     name="codigo"
                     id="codigo"
                     required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                     value={formData.codigo}
                     onChange={handleChange}
                     maxLength={20}
@@ -531,7 +531,7 @@ const CursoForm = () => {
                     name="descripcion"
                     id="descripcion"
                     rows={4}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                     value={formData.descripcion}
                     onChange={handleChange}
                   />
@@ -546,7 +546,7 @@ const CursoForm = () => {
                         id="activo"
                         checked={formData.activo}
                         onChange={handleChange}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                       />
                       <label htmlFor="activo" className="ml-2 block text-sm text-gray-700">
                         Curso activo
@@ -561,17 +561,17 @@ const CursoForm = () => {
                 <button
                   type="button"
                   onClick={confirmCancel}
-                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                  className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${
                     submitting 
-                      ? 'bg-indigo-400 cursor-not-allowed'
-                      : 'bg-indigo-600 hover:bg-indigo-700'
+                      ? 'bg-primary-light cursor-not-allowed'
+                      : 'bg-primary hover:bg-primary-dark'
                   }`}
                 >
                   {submitting ? 'Guardando...' : isEditMode ? 'Actualizar curso' : 'Crear'}
@@ -589,7 +589,7 @@ const CursoForm = () => {
                 </h2>
                 <button 
                   onClick={openAddDocentesModal}
-                  className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
+                  className="px-3 py-1.5 bg-primary text-white text-sm rounded hover:bg-primary-dark"
                 >
                   {isEditMode ? 'Añadir docentes' : 'Seleccionar docentes'}
                 </button>
@@ -606,7 +606,7 @@ const CursoForm = () => {
                         </div>
                         <button
                           onClick={() => confirmRemoveDocente(docente.id, docente.name)}
-                          className="text-red-600 hover:text-red-800 text-sm"
+                          className="text-red hover:text-red-dark text-sm"
                         >
                           Eliminar
                         </button>
@@ -631,7 +631,7 @@ const CursoForm = () => {
                 </h2>
                 <button 
                   onClick={openAddEstudiantesModal}
-                  className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                  className="px-3 py-1.5 bg-green text-white text-sm rounded hover:bg-green-dark"
                 >
                   {isEditMode ? 'Matricular estudiantes' : 'Seleccionar estudiantes'}
                 </button>
@@ -648,7 +648,7 @@ const CursoForm = () => {
                         </div>
                         <button
                           onClick={() => confirmRemoveEstudiante(estudiante.id, estudiante.name)}
-                          className="text-red-600 hover:text-red-800 text-sm"
+                          className="text-red hover:text-red-dark text-sm"
                         >
                           Eliminar
                         </button>
@@ -671,14 +671,14 @@ const CursoForm = () => {
             <button
               type="button"
               onClick={confirmCancel}
-              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('info')}
-              className="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="bg-primary py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
               Continuar a Información del Curso
             </button>
@@ -700,7 +700,7 @@ const CursoForm = () => {
           confirmText={isEditMode ? "Añadir docentes" : "Seleccionar docentes"}
           searchPlaceholder="Buscar docentes por nombre o email..."
           emptyMessage="No se encontraron docentes disponibles"
-          primaryColor="indigo"
+          primaryColor="primary"
         />
       )}
       
