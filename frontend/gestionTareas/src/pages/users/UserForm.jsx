@@ -213,7 +213,11 @@ const UserForm = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-10">Cargando...</div>;
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   // Obtener el estilo para los indicadores de validación
@@ -221,23 +225,23 @@ const UserForm = () => {
     if (!validations[field].touched) return "text-gray-500";
     
     if (condition !== null) {
-      return condition ? "text-green-600" : "text-red-600";
+      return condition ? "text-green" : "text-red";
     }
     
-    return validations[field].isValid ? "text-green-600" : "text-red-600";
+    return validations[field].isValid ? "text-green" : "text-red";
   };
 
   // Obtener el estilo para los campos de entrada
   const getInputClass = (field) => {
-    const baseClass = "mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 sm:text-sm";
+    const baseClass = "mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary sm:text-sm";
     
     if (!validations[field].touched) {
       return `${baseClass} border-gray-300`;
     }
     
     return validations[field].isValid 
-      ? `${baseClass} border-green-500 focus:border-green-500` 
-      : `${baseClass} border-red-500 focus:border-red-500`;
+      ? `${baseClass} border-green focus:border-green` 
+      : `${baseClass} border-red focus:border-red`;
   };
 
   return (
@@ -261,7 +265,7 @@ const UserForm = () => {
         <p>{dialogConfig.message}</p>
       </Dialog>
 
-      <div className="bg-white shadow overflow-hidden rounded-lg">
+      <div className="bg-gray-50 shadow overflow-hidden rounded-lg">
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-6">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -281,7 +285,7 @@ const UserForm = () => {
                   maxLength={50}
                 />
                 {validations.firstName.touched && !validations.firstName.isValid && (
-                  <p className="mt-1 text-sm text-red-600">{validations.firstName.message}</p>
+                  <p className="mt-1 text-sm text-red">{validations.firstName.message}</p>
                 )}
               </div>
               
@@ -301,7 +305,7 @@ const UserForm = () => {
                   maxLength={50}
                 />
                 {validations.lastName.touched && !validations.lastName.isValid && (
-                  <p className="mt-1 text-sm text-red-600">{validations.lastName.message}</p>
+                  <p className="mt-1 text-sm text-red">{validations.lastName.message}</p>
                 )}
               </div>
             </div>
@@ -325,7 +329,7 @@ const UserForm = () => {
                 onChange={handleChange}
               />
               {validations.email.touched && !validations.email.isValid && (
-                <p className="mt-1 text-sm text-red-600">{validations.email.message}</p>
+                <p className="mt-1 text-sm text-red">{validations.email.message}</p>
               )}
               <p className="mt-1 text-xs text-gray-500">Debe ser un correo electrónico institucional (@uni.edu.ec)</p>
             </div>
@@ -366,7 +370,7 @@ const UserForm = () => {
                   </li>
                 </ul>
                 {validations.password.touched && !validations.password.isValid && (
-                  <p className="text-sm text-red-600">{validations.password.message}</p>
+                  <p className="text-sm text-red">{validations.password.message}</p>
                 )}
               </div>
             </div>
@@ -378,7 +382,7 @@ const UserForm = () => {
               <select
                 id="role"
                 name="role"
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                 value={formData.role}
                 onChange={handleChange}
               >
@@ -394,7 +398,7 @@ const UserForm = () => {
             <button
               type="button"
               onClick={confirmCancel}
-              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="bg-gray-50 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
               Cancelar
             </button>
@@ -403,11 +407,11 @@ const UserForm = () => {
               disabled={submitting || 
                 (!isEditMode && (!validations.firstName.isValid || !validations.lastName.isValid || !validations.email.isValid || !validations.password.isValid)) ||
                 (isEditMode && formData.password && !validations.password.isValid)}
-              className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+              className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${
                 submitting || (!isEditMode && (!validations.firstName.isValid || !validations.lastName.isValid || !validations.email.isValid || !validations.password.isValid)) ||
                 (isEditMode && formData.password && !validations.password.isValid)
-                  ? 'bg-indigo-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-700'
+                  ? 'bg-primary-light cursor-not-allowed'
+                  : 'bg-primary hover:bg-primary-dark'
               }`}
             >
               {submitting ? 'Guardando...' : isEditMode ? 'Actualizar usuario' : 'Crear'}
