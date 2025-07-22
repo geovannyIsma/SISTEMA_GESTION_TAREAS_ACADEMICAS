@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const path = require('path');
 
 // Crear tarea
 const crearTarea = async (req, res) => {
@@ -662,6 +663,51 @@ const eliminarTarea = async (req, res) => {
   }
 };
 
+// Subir material docente
+const subirMaterial = async (req, res) => {
+  try {
+    // Verifica que se haya subido un archivo
+    if (!req.file) {
+      return res.status(400).json({ status: 'error', message: 'No se ha proporcionado ningún archivo' });
+    }
+
+    // Ruta relativa del archivo para guardar en la base de datos
+    const archivoUrl = `/uploads/material/${req.file.filename}`;
+    
+    // Determinar tipo de archivo
+    const fileExt = path.extname(req.file.originalname).toLowerCase();
+    let fileType = 'OTRO';
+    
+    if (['.pdf'].includes(fileExt)) fileType = 'PDF';
+    else if (['.zip', '.rar', '.7z'].includes(fileExt)) fileType = 'ZIP';
+    else if (['.jpg', '.jpeg', '.png', '.gif', '.bmp'].includes(fileExt)) fileType = 'IMG';
+    else if (['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'].includes(fileExt)) fileType = 'DOC';
+    
+    // Obtener tamaño en MB
+    const fileSizeMB = req.file.size / (1024 * 1024);
+
+    // Crear respuesta con información del archivo
+    const fileInfo = {
+      url: archivoUrl,
+      originalName: req.file.originalname,
+      filename: req.file.filename,
+      size: req.file.size,
+      sizeMB: fileSizeMB.toFixed(2),
+      type: fileType,
+      mimetype: req.file.mimetype
+    };
+
+    res.status(200).json({ 
+      status: 'success', 
+      message: 'Material subido correctamente',
+      data: fileInfo
+    });
+  } catch (error) {
+    console.error('Error al subir material:', error);
+    res.status(500).json({ status: 'error', message: 'Error al subir el material' });
+  }
+};
+
 module.exports = {
   crearTarea,
   editarTarea,
@@ -673,5 +719,6 @@ module.exports = {
   listarCursosDocente,
   listarEntregasPendientes,
   getEstadisticasDocente,
-  eliminarTarea
+  eliminarTarea,
+  subirMaterial
 };

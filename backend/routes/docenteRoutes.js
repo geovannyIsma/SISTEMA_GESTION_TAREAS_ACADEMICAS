@@ -3,13 +3,70 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { docenteOnly } = require('../middleware/docenteMiddleware');
 const docenteController = require('../controllers/docenteController');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
 // Proteger todas las rutas y permitir solo a docentes
 router.use(protect);
 router.use(docenteOnly);
 
+// Crear directorio para materiales de docentes si no existe
+const materialDir = path.join(__dirname, '../uploads/material');
+if (!fs.existsSync(materialDir)) {
+  fs.mkdirSync(materialDir, { recursive: true });
+  console.log(`Directorio de materiales docentes creado: ${materialDir}`);
+}
+
+// Configuración para subida de archivos de materiales docentes
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, materialDir);
+  },
+  filename: function (req, file, cb) {
+    // Crear un nombre único para el archivo y sanitizar el nombre original
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    cb(null, file.fieldname + '-' + uniqueSuffix + '-' + sanitizedName);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // Limite de 50MB para material docente
+  fileFilter: (req, file, cb) => {
+    // Validar tipo de archivo si es necesario
+    cb(null, true);
+  }
+}).single('archivo');
+
+// Middleware personalizado para manejar errores de multer
+const handleMulterError = (req, res, next) => {
+  upload(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      // Error de Multer
+      console.error('Error en carga de archivo Multer:', err);
+      return res.status(400).json({ 
+        status: 'error', 
+        message: `Error en la carga del archivo: ${err.message}` 
+      });
+    } else if (err) {
+      // Error desconocido
+      console.error('Error desconocido en carga de archivo:', err);
+      return res.status(500).json({ 
+        status: 'error', 
+        message: `Error en la carga del archivo: ${err.message}` 
+      });
+    }
+    next();
+  });
+};
+
 // Crear tarea
 router.post('/tareas', docenteController.crearTarea);
+
+// Ruta para subir material
+router.post('/material/upload', handleMulterError, docenteController.subirMaterial);
 
 // Obtener tarea específica por ID
 router.get('/tareas/:id', docenteController.getTareaById);

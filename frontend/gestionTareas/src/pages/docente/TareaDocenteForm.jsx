@@ -34,6 +34,7 @@ const TareaDocenteForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0); // Añadir estado para progreso de carga
   
   // Estado para diálogos
   const [dialogConfig, setDialogConfig] = useState({
@@ -204,12 +205,54 @@ const TareaDocenteForm = () => {
     }
   };
 
-  const handleFileChange = (e) => {
-    // If form is read-only, don't allow file changes
-    if (isReadOnly) return;
+  const handleFileChange = async (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
 
-    if (e.target.files && e.target.files[0]) {
-      setArchivo(e.target.files[0]);
+    // Verificar tamaño del archivo (50MB máximo)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB en bytes
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      showAlert('error', 'El archivo es demasiado grande. El tamaño máximo es de 50MB.');
+      e.target.value = ''; // Limpiar el input
+      return;
+    }
+
+    setArchivo(selectedFile);
+
+    try {
+      const formData = new FormData();
+      formData.append('archivo', selectedFile);
+
+      // Mostrar mensaje de carga
+      showAlert('info', 'Subiendo material, por favor espere...');
+
+      // Realizar la subida del archivo
+      const response = await api.post('/docente/material/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          // Calcular y actualizar el progreso
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(progress);
+        }
+      });
+
+      if (response.data && response.data.status === 'success') {
+        // Actualizar estado con la URL del archivo
+        setFormData(prevData => ({
+          ...prevData,
+          archivoUrl: response.data.data.url
+        }));
+        
+        showAlert('success', 'Material subido correctamente');
+      }
+    } catch (error) {
+      console.error('Error al subir el archivo:', error);
+      showAlert('error', 'Error al subir el archivo: ' + (error.response?.data?.message || error.message));
+      e.target.value = ''; // Limpiar el input
+    } finally {
+      setUploadProgress(0);
     }
   };
 
@@ -560,40 +603,42 @@ const TareaDocenteForm = () => {
               />
             </div>
 
-            <div>
-              <label htmlFor="archivo" className="block text-sm font-medium text-gray-700">
+            {/* File upload section with progress indicator */}
+            <div className="mb-6">
+              <label htmlFor="archivo" className="block text-sm font-medium text-gray-700 mb-1">
                 Material de apoyo (opcional)
               </label>
-              <div className="mt-1 flex items-center">
+              <div className="mt-1">
                 <input
                   type="file"
                   id="archivo"
-                  name="archivo"
                   ref={fileInputRef}
                   onChange={handleFileChange}
-                  className="sr-only"
-                  disabled={isReadOnly}
+                  disabled={isReadOnly || submitting}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0 file:text-sm file:font-semibold
+                    file:bg-primary file:text-white hover:file:bg-primary-dark"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current.click()}
-                  disabled={isReadOnly}
-                  className={`px-3 py-2 border border-gray-300 rounded-md text-sm font-medium ${isReadOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary`}
-                >
-                  Seleccionar archivo
-                </button>
-                <span className="ml-3 text-sm text-gray-500">
-                  {archivo ? archivo.name : formData.archivoUrl ? 'Archivo ya subido' : 'Ningún archivo seleccionado'}
-                </span>
                 {formData.archivoUrl && (
-                  <a 
-                    href={formData.archivoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-3 text-sm text-primary hover:text-primary-dark"
-                  >
-                    Ver archivo
-                  </a>
+                  <div className="mt-2 text-sm text-gray-600">
+                    <p>Material cargado: 
+                      <a href={formData.archivoUrl} target="_blank" rel="noreferrer" 
+                         className="ml-1 text-primary hover:underline">
+                        Ver archivo
+                      </a>
+                    </p>
+                  </div>
+                )}
+                
+                {/* Progress bar for file upload */}
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                    <div 
+                      className="bg-primary h-2.5 rounded-full" 
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                    <p className="text-xs text-gray-500 mt-1">Subiendo: {uploadProgress}%</p>
+                  </div>
                 )}
               </div>
             </div>

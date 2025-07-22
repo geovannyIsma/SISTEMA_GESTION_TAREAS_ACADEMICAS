@@ -40,6 +40,15 @@ const apiRequest = async (endpoint, method = 'GET', data = null) => {
   }
 };
 
+// Método para subir material docente
+const subirMaterialDocente = (formData) => {
+  return axios.post('/api/docente/material/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};
+
 // Define métodos HTTP como funciones helper
 const api = {
   // Métodos HTTP genéricos
