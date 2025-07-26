@@ -6,13 +6,19 @@ const API_URL = 'http://localhost:3000/api';
 const apiRequest = async (endpoint, method = 'GET', data = null) => {
   const token = localStorage.getItem('token');
   
-  const headers = {
-    'Content-Type': 'application/json',
-  };
+  const headers = {};
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
+  
+  // Check if data is FormData (for file uploads)
+  const isFormData = data instanceof FormData;
+  
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
+  // For FormData, don't set Content-Type - let browser set it with boundary
   
   const config = {
     method,
@@ -20,7 +26,7 @@ const apiRequest = async (endpoint, method = 'GET', data = null) => {
   };
   
   if (data) {
-    config.body = JSON.stringify(data);
+    config.body = isFormData ? data : JSON.stringify(data);
   }
   
   try {
@@ -137,22 +143,27 @@ const api = {
   buscarEstudiantes: (query) => apiRequest(`/users?search=${encodeURIComponent(query)}&role=ESTUDIANTE`),
 
   // File uploads
-  uploadFile: (formData) => {
-    const token = localStorage.getItem('token');
+  // uploadFile: (formData) => {
+  //   return apiRequest('/docente/material/upload', 'POST', formData);
+  // },
+  
+  // // Deprecated - use uploadFile instead
+  // uploadFileOld: (formData) => {
+  //   const token = localStorage.getItem('token');
     
-    return fetch(`${API_URL}/upload`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
-    }).then(response => {
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    });
-  },
+  //   return fetch(`${API_URL}/upload`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Authorization': `Bearer ${token}`
+  //     },
+  //     body: formData
+  //   }).then(response => {
+  //     if (!response.ok) {
+  //       throw new Error(`Error ${response.status}: ${response.statusText}`);
+  //     }
+  //     return response.json();
+  //   });
+  // },
 
   // Entregas de estudiantes
   getEntregaEstudiante: (tareaId) => apiRequest(`/estudiante/tareas/${tareaId}/entrega`),
@@ -200,6 +211,25 @@ const api = {
   // Eliminar un archivo específico de una entrega
   eliminarArchivoEntrega: (tareaId, archivoId) => 
     apiRequest(`/estudiante/tareas/${tareaId}/entrega/archivos/${archivoId}`, 'DELETE'),
+
+  subirMaterial: (formData) => {
+    const token = localStorage.getItem('token');
+    
+    return fetch(`${API_URL}/docente/material/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    }).then(response => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          throw new Error(data.message || `Error ${response.status}: ${response.statusText}`);
+        });
+      }
+      return response.json();
+    });
+  },
 };
 
 export default api;

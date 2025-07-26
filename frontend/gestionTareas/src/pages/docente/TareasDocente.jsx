@@ -4,6 +4,8 @@ import api from '../../services/api';
 import Dialog from '../../components/dialog';
 import { useAlert } from '../../context/AlertContext'; // Import useAlert
 
+const API_BASE_URL = 'http://localhost:3000';
+
 // Función para formatear fechas en formato legible
 const formatDate = (dateString) => {
   if (!dateString) return 'Sin fecha';
@@ -285,7 +287,8 @@ const TareasDocente = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {tarea.archivoUrl ? (
                         <a 
-                          href={tarea.archivoUrl} 
+                          href= {tarea.archivoUrl.startsWith('http') ? tarea.archivoUrl : 
+                            `${API_BASE_URL}/${tarea.archivoUrl.replace(/^\//, '')}` } 
                           target="_blank" 
                           rel="noreferrer"
                           className="text-primary hover:text-primary-dark font-medium"

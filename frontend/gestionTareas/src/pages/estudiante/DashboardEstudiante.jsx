@@ -48,8 +48,8 @@ const DashboardEstudiante = () => {
   
   return (
     <div className="py-6">
-      <h1 className="text-2xl font-bold mb-2">Welcome, {getFullName(user?.firstName, user?.lastName)}</h1>
-      <p className="mb-6 text-gray-700">Here's a summary of your courses and academic tasks.</p>
+      <h1 className="text-2xl font-bold mb-2">Bienvenido, {getFullName(user?.firstName, user?.lastName)}</h1>
+      <p className="mb-6 text-gray-700">A continuación se muestra un resumen de tus cursos y tareas académicas.</p>
       
       {loading ? (
         <div className="flex justify-center items-center py-6">

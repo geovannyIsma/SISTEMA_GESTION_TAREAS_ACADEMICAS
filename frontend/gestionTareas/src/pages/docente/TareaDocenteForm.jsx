@@ -5,6 +5,8 @@ import Dialog from '../../components/dialog';
 import { useAlert } from '../../context/AlertContext';
 import { sanitizeInput } from '../../utils/validation';
 
+const API_BASE_URL = 'http://localhost:3000';
+
 const TareaDocenteForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -368,10 +370,10 @@ const TareaDocenteForm = () => {
         // subir el archivo a un servicio como AWS S3, Firebase Storage, etc.
         // y luego obtener la URL.
         const formDataFile = new FormData();
-        formDataFile.append('file', archivo);
+        formDataFile.append('archivo', archivo);
         
         // Suponemos que existe un endpoint para subir archivos
-        const uploadResponse = await api.uploadFile(formDataFile);
+        const uploadResponse = await api.subirMaterial(formDataFile);
         archivoUrl = uploadResponse.data.url;
       }
       
@@ -621,8 +623,13 @@ const TareaDocenteForm = () => {
                 />
                 {formData.archivoUrl && (
                   <div className="mt-2 text-sm text-gray-600">
-                    <p>Material cargado: 
-                      <a href={formData.archivoUrl} target="_blank" rel="noreferrer" 
+                    <p>Material cargado:
+                      {/* sin el /upload/material/ */}
+                      {formData.archivoUrl.replace(/^\//, '')}
+                      <a href={ formData.archivoUrl.startsWith('http') ? 
+                        formData.archivoUrl :
+                         `${API_BASE_URL}/${formData.archivoUrl.replace(/^\//, '')}` } 
+                         target="_blank" rel="noreferrer" 
                          className="ml-1 text-primary hover:underline">
                         Ver archivo
                       </a>

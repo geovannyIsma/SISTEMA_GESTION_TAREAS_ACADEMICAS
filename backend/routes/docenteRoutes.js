@@ -68,6 +68,9 @@ router.post('/tareas', docenteController.crearTarea);
 // Ruta para subir material
 router.post('/material/upload', handleMulterError, docenteController.subirMaterial);
 
+// Ruta para subir material
+router.put('/material/upload', handleMulterError, docenteController.subirMaterial);
+
 // Obtener tarea específica por ID
 router.get('/tareas/:id', docenteController.getTareaById);
 
