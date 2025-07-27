@@ -192,9 +192,9 @@ const TareaDocenteForm = () => {
 
     const { name, value, type, checked } = e.target;
     
-    // Para campos de texto, sanitizamos la entrada
+    // Sanitizar la entrada de texto y textarea
     if (type === 'text' || type === 'textarea') {
-      const sanitizedValue = sanitizeInput(value);
+      const sanitizedValue =  value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9.,:;()¿?¡!'"%&$#@_\-\/\s]/g, '');
       setFormData({ ...formData, [name]: sanitizedValue });
       validateField(name, sanitizedValue);
     } 

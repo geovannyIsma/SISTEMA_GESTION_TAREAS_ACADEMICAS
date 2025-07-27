@@ -506,57 +506,6 @@ const DashboardDocente = () => {
         </div>
       </div>
       
-      {/* Acciones rápidas */}
-      <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100 mb-6">
-        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Acciones rápidas</h3>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link 
-              to="/docente/tareas/nueva" 
-              className="flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-            >
-              <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-              Crear Nueva Tarea
-            </Link>
-            <Link 
-              to="/docente/tareas" 
-              className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-            >
-              <svg className="mr-2 h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-              </svg>
-              Gestionar Tareas
-            </Link>
-            <button
-              className="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-800 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-              onClick={() => {
-                const tareasTexto = tareasRecientes
-                  .map(t => `${t.titulo} - Fecha límite: ${new Date(t.fechaEntrega).toLocaleDateString('es-ES')}`)
-                  .join('\n');
-                
-                const element = document.createElement("a");
-                const file = new Blob([`INFORME DE TAREAS RECIENTES\n\n${tareasTexto}`], {type: 'text/plain'});
-                element.href = URL.createObjectURL(file);
-                element.download = "tareas_recientes.txt";
-                document.body.appendChild(element);
-                element.click();
-                document.body.removeChild(element);
-              }}
-            >
-              <svg className="mr-2 h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
-              </svg>
-              Generar Informe
-            </button>
-          </div>
-        </div>
-      </div>
-      
       {/* Próximos vencimientos */}
       <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">

@@ -106,8 +106,16 @@ const UserForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Sanitizar entrada para prevenir inyecciones
-    const sanitizedValue = name !== 'password' ? sanitizeInput(value) : value;
+    // Permitir espacios en nombre y apellido
+    let sanitizedValue;
+    if (name === 'firstName' || name === 'lastName') {
+      // Sanitiza pero permite espacios internos
+      sanitizedValue = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ' -]/g, '');
+    } else if (name !== 'password') {
+      sanitizedValue = sanitizeInput(value);
+    } else {
+      sanitizedValue = value;
+    }
     
     setFormData({ ...formData, [name]: sanitizedValue });
     
