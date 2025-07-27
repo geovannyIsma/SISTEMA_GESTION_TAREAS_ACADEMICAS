@@ -114,7 +114,6 @@ const TareaDocenteForm = () => {
           setLoading(false);
         }
       };
-      
       fetchTarea();
     } else {
       // Establecer fechas predeterminadas para nueva tarea
@@ -514,6 +513,42 @@ const TareaDocenteForm = () => {
     });
   };
 
+  // Agrega función para iconos visuales de archivos
+  const getFileIcon = (tipo) => {
+    const tipoLower = tipo?.toLowerCase() || '';
+    if (tipoLower.includes('pdf')) {
+      return (
+        <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+        </svg>
+      );
+    } else if (tipoLower.includes('image') || tipoLower.includes('jpg') || tipoLower.includes('png') || tipoLower.includes('jpeg')) {
+      return (
+        <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+        </svg>
+      );
+    } else if (tipoLower.includes('zip') || tipoLower.includes('rar')) {
+      return (
+        <svg className="w-8 h-8 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+        </svg>
+      );
+    } else if (tipoLower.includes('doc') || tipoLower.includes('docx')) {
+      return (
+        <svg className="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+        </svg>
+      );
+    } else {
+      return (
+        <svg className="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+        </svg>
+      );
+    }
+  };
+
   return (
     <div className="py-6">
       <div className="mb-6">
@@ -711,14 +746,7 @@ const TareaDocenteForm = () => {
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           {/* File type icon */}
-                          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">
-                              {material.tipo === 'PDF' ? 'PDF' : 
-                               material.tipo === 'ZIP' ? 'ZIP' : 
-                               material.tipo === 'IMG' ? 'IMG' : 
-                               material.tipo === 'DOC' ? 'DOC' : 'FILE'}
-                            </span>
-                          </div>
+                          {getFileIcon(material.tipo)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
@@ -759,14 +787,7 @@ const TareaDocenteForm = () => {
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           {/* File type icon */}
-                          <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">
-                              {fileData.tipo === 'PDF' ? 'PDF' : 
-                               fileData.tipo === 'ZIP' ? 'ZIP' : 
-                               fileData.tipo === 'IMG' ? 'IMG' : 
-                               fileData.tipo === 'DOC' ? 'DOC' : 'FILE'}
-                            </span>
-                          </div>
+                          {getFileIcon(fileData.tipo)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">

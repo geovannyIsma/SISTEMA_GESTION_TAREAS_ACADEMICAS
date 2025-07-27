@@ -421,15 +421,72 @@ const TareaDetalleEstudiante = () => {
                       <label htmlFor="archivo" className="block text-sm font-medium text-gray-700">
                         Archivo de entrega
                       </label>
-                      <div className="mt-1 flex items-center">
+                      <div className="mt-1">
                         <input
                           id="archivo"
                           name="archivo"
                           type="file"
-                          className="py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                          className="py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary w-full"
                           onChange={handleFileChange}
                         />
                       </div>
+                      
+                      {/* Mostrar archivo seleccionado */}
+                      {archivo && (
+                        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-xs text-green-800 font-medium mb-2">Archivo seleccionado para enviar:</p>
+                          <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-green-300">
+                            {/* Icono del archivo basado en el tipo */}
+                            <div className="flex-shrink-0">
+                              {archivo.type.includes('pdf') ? (
+                                <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
+                              ) : archivo.type.includes('image') ? (
+                                <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                </svg>
+                              ) : archivo.type.includes('word') || archivo.type.includes('document') ? (
+                                <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                </svg>
+                              ) : (
+                                <svg className="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            
+                            {/* Información del archivo */}
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-gray-900">{archivo.name}</p>
+                              <div className="flex items-center space-x-4 mt-1">
+                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                  {archivo.type || 'Tipo desconocido'}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {(archivo.size / (1024 * 1024)).toFixed(2)} MB
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Botón para quitar archivo */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setArchivo(null);
+                                document.getElementById('archivo').value = '';
+                              }}
+                              className="flex-shrink-0 p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-full transition-colors"
+                              title="Quitar archivo"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Mostrar archivos actualmente cargados */}
                       {entrega && (
@@ -489,22 +546,66 @@ const TareaDetalleEstudiante = () => {
                           
                           {/* Mostrar lista de archivos (nuevo formato) */}
                           {entrega.archivos && entrega.archivos.length > 0 && (
-                            <ul className="space-y-2">
+                            <div className="space-y-3">
                               {entrega.archivos.map((archivo) => (
-                                <li key={archivo.id} className="flex items-center justify-between p-2 bg-white rounded shadow-sm">
-                                  <div className="flex items-center">
-                                    <svg className="w-4 h-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                    </svg>
+                                <div key={archivo.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:shadow-md transition-shadow">
+                                  <div className="flex items-center space-x-3">
+                                    {/* Icono del archivo basado en el tipo */}
+                                    <div className="flex-shrink-0">
+                                      {archivo.tipo && archivo.tipo.toLowerCase().includes('pdf') ? (
+                                        <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                        </svg>
+                                      ) : archivo.tipo && (archivo.tipo.toLowerCase().includes('image') || archivo.tipo.toLowerCase().includes('jpg') || archivo.tipo.toLowerCase().includes('png')) ? (
+                                        <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                        </svg>
+                                      ) : archivo.tipo && (archivo.tipo.toLowerCase().includes('doc') || archivo.tipo.toLowerCase().includes('word')) ? (
+                                        <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                        </svg>
+                                      ) : (
+                                        <svg className="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Información del archivo */}
+                                    <div className="flex-1">
+                                      <a 
+                                        href={archivo.url.startsWith('http') ? 
+                                          archivo.url : 
+                                          `${API_BASE_URL}/${archivo.url.replace(/^\//,'')}`}
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="block text-sm font-semibold text-gray-900 hover:text-blue-700 transition-colors"
+                                      >
+                                        {archivo.nombre || 'Archivo sin nombre'}
+                                      </a>
+                                      <div className="flex items-center space-x-4 mt-1">
+                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                          {archivo.tipo || 'Tipo desconocido'}
+                                        </span>
+                                        <span className="text-xs text-gray-500">
+                                          {archivo.sizeMB ? `${archivo.sizeMB.toFixed(2)} MB` : 'Tamaño desconocido'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Botón de descarga */}
                                     <a 
                                       href={archivo.url.startsWith('http') ? 
                                         archivo.url : 
                                         `${API_BASE_URL}/${archivo.url.replace(/^\//,'')}`}
                                       target="_blank" 
                                       rel="noopener noreferrer"
-                                      className="text-sm text-blue-700 hover:text-blue-900 font-medium"
+                                      className="flex-shrink-0 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-full transition-colors"
+                                      title="Descargar archivo"
                                     >
-                                      {`${archivo.nombre || 'Archivo'} ${archivo.tipo || 'Archivo'} (${archivo.sizeMB ? `${archivo.sizeMB.toFixed(2)} MB` : 'Tamaño desconocido'})`}
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
                                     </a>
                                   </div>
                                   
@@ -528,9 +629,9 @@ const TareaDetalleEstudiante = () => {
                                       )}
                                     </button>
                                   )}
-                                </li>
+                                </div>
                               ))}
-                            </ul>
+                            </div>
                           )}
                           
                           <div className="flex items-center mt-3">
@@ -676,7 +777,7 @@ const TareaDetalleEstudiante = () => {
           )}
           
           {/* Fallback: Mostrar calificación legacy si no hay retroalimentaciones pero sí calificación */}
-          {retroalimentaciones.length === 0 && entrega?.calificacion !== null && (
+          {retroalimentaciones.length === 0 && entrega && entrega.calificacion !== null && (
             <div className="bg-yellow-50 shadow-sm overflow-hidden rounded-lg border border-yellow-200">
               <div className="px-4 py-5 sm:px-6 border-b border-yellow-200">
                 <h2 className="text-lg font-medium text-gray-900">Calificación</h2>
