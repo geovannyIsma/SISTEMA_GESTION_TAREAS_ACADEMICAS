@@ -188,7 +188,11 @@ const CursoForm = () => {
   // User management functions
   const openAddDocentesModal = async () => {
     try {
-      // No longer filter out selected docentes
+      // In edit mode, reset selection to empty to allow selecting new docentes
+      // In create mode, keep the current selection
+      if (isEditMode) {
+        setSelectedDocentes([]);
+      }
       setAssigningDocentes(true);
     } catch (error) {
       showAlert('error', error.message || 'Error al cargar docentes');
@@ -198,7 +202,11 @@ const CursoForm = () => {
 
   const openAddEstudiantesModal = async () => {
     try {
-      // No longer filter out selected estudiantes
+      // In edit mode, reset selection to empty to allow selecting new estudiantes
+      // In create mode, keep the current selection
+      if (isEditMode) {
+        setSelectedEstudiantes([]);
+      }
       setAssigningEstudiantes(true);
     } catch (error) {
       showAlert('error', error.message || 'Error al cargar estudiantes');
@@ -225,13 +233,22 @@ const CursoForm = () => {
   const handleAddDocentesConfirm = async () => {
     try {
       if (isEditMode) {
-        await cursoService.addDocentes(id, selectedDocentes);
+        // Get currently assigned docente IDs
+        const currentDocenteIds = docentes.map(d => d.id);
+        // Filter to get only newly selected docentes
+        const newDocenteIds = selectedDocentes.filter(id => !currentDocenteIds.includes(id));
         
-        // Update docentes list
-        const updatedCurso = await cursoService.getCursoById(id);
-        setDocentes(updatedCurso.data.docentes);
-        
-        showAlert('success', 'Docentes añadidos correctamente');
+        if (newDocenteIds.length > 0) {
+          await cursoService.addDocentes(id, newDocenteIds);
+          
+          // Update docentes list
+          const updatedCurso = await cursoService.getCursoById(id);
+          setDocentes(updatedCurso.data.docentes);
+          
+          showAlert('success', `${newDocenteIds.length} docentes añadidos correctamente`);
+        } else {
+          showAlert('info', 'No hay nuevos docentes para añadir');
+        }
       } else {
         // For new courses, just keep track of the selected docentes to add after creation
         showAlert('success', `${selectedDocentes.length} docentes seleccionados`);
@@ -246,13 +263,22 @@ const CursoForm = () => {
   const handleAddEstudiantesConfirm = async () => {
     try {
       if (isEditMode) {
-        await cursoService.addEstudiantes(id, selectedEstudiantes);
+        // Get currently assigned estudiante IDs
+        const currentEstudianteIds = estudiantes.map(e => e.id);
+        // Filter to get only newly selected estudiantes
+        const newEstudianteIds = selectedEstudiantes.filter(id => !currentEstudianteIds.includes(id));
         
-        // Update estudiantes list
-        const updatedCurso = await cursoService.getCursoById(id);
-        setEstudiantes(updatedCurso.data.estudiantes);
-        
-        showAlert('success', 'Estudiantes añadidos correctamente');
+        if (newEstudianteIds.length > 0) {
+          await cursoService.addEstudiantes(id, newEstudianteIds);
+          
+          // Update estudiantes list
+          const updatedCurso = await cursoService.getCursoById(id);
+          setEstudiantes(updatedCurso.data.estudiantes);
+          
+          showAlert('success', `${newEstudianteIds.length} estudiantes añadidos correctamente`);
+        } else {
+          showAlert('info', 'No hay nuevos estudiantes para añadir');
+        }
       } else {
         // For new courses, just keep track of the selected estudiantes to add after creation
         showAlert('success', `${selectedEstudiantes.length} estudiantes seleccionados`);
@@ -679,9 +705,9 @@ const CursoForm = () => {
         <UserSelector
           title={isEditMode ? "Añadir docentes al curso" : "Seleccionar docentes para el curso"}
           users={isEditMode 
-            ? allDocentes 
+            ? allDocentes.filter(docente => !docentes.some(d => d.id === docente.id))
             : allDocentes}
-          selectedIds={isEditMode ? docentes.map(d => d.id) : selectedDocentes}
+          selectedIds={selectedDocentes}
           onToggleSelect={toggleSelectDocente}
           onCancel={() => setAssigningDocentes(false)}
           onConfirm={handleAddDocentesConfirm}
@@ -697,9 +723,9 @@ const CursoForm = () => {
         <UserSelector
           title={isEditMode ? "Añadir estudiantes al curso" : "Seleccionar estudiantes para el curso"}
           users={isEditMode 
-            ? allEstudiantes 
+            ? allEstudiantes.filter(estudiante => !estudiantes.some(e => e.id === estudiante.id))
             : allEstudiantes}
-          selectedIds={isEditMode ? estudiantes.map(e => e.id) : selectedEstudiantes}
+          selectedIds={selectedEstudiantes}
           onToggleSelect={toggleSelectEstudiante}
           onCancel={() => setAssigningEstudiantes(false)}
           onConfirm={handleAddEstudiantesConfirm}
