@@ -25,6 +25,7 @@ import CursoTareasEstudiante from './pages/estudiante/CursoTareasEstudiante';
 import TareasEstudiante from './pages/estudiante/TareasEstudiante';
 import TareaDetalleEstudiante from './pages/estudiante/TareaDetalleEstudiante';
 import EntregasEstudiante from './pages/estudiante/EntregasEstudiante';
+import EstadisticasDocente from './pages/docente/EstadisticasDocente';
 
 function App() {
   return (
@@ -132,6 +133,11 @@ function App() {
             <Route path="/docente/tareas/:tareaId/calificar" element={
               <AdminLayout>
                 <CalificarEntregas />
+              </AdminLayout>
+            } />
+            <Route path="/docente/estadisticas" element={
+              <AdminLayout>
+                <EstadisticasDocente />
               </AdminLayout>
             } />
             

@@ -18,6 +18,10 @@ const DashboardDocente = () => {
     tareasProximas: 0,
     entregasPendientes: 0
   });
+  const [extraStats, setExtraStats] = useState({
+    tareasVencidas: 0,
+    promedioCalificaciones: null
+  });
   const [cursos, setCursos] = useState([]);
   const [tareasRecientes, setTareasRecientes] = useState([]);
   const [entregasRecientes, setEntregasRecientes] = useState([]);
@@ -64,9 +68,8 @@ const DashboardDocente = () => {
         const tareasResponse = await api.listarTareasDocente();
         if (tareasResponse && tareasResponse.data) {
           const tareasData = tareasResponse.data;
-          
-          // Calcular estadísticas basadas en las tareas
           const ahora = new Date();
+          // Calcular estadísticas basadas en las tareas
           const proximaSemana = new Date();
           proximaSemana.setDate(ahora.getDate() + 7);
           
@@ -94,6 +97,28 @@ const DashboardDocente = () => {
             
             setTareasRecientes(tareasOrdenadas.slice(0, 5));
           }
+          
+          // Calcular tareas vencidas y promedio de calificaciones
+          let tareasVencidas = 0;
+          let sumaCalificaciones = 0;
+          let totalCalificadas = 0;
+          tareasVencidas = tareasData.filter(t => t.habilitada !== false && new Date(t.fechaEntrega) < ahora).length;
+          // Calcular promedio de calificaciones de todas las entregas calificadas
+          for (const tarea of tareasData) {
+            if (tarea.entregas && tarea.entregas.length > 0) {
+              tarea.entregas.forEach(e => {
+                if (e.calificacion !== null && e.calificacion !== undefined) {
+                  sumaCalificaciones += e.calificacion;
+                  totalCalificadas++;
+                }
+              });
+            }
+          }
+          
+          setExtraStats({
+            tareasVencidas,
+            promedioCalificaciones: totalCalificadas > 0 ? (sumaCalificaciones / totalCalificadas).toFixed(2) : null
+          });
         }
         
         // Obtener entregas pendientes de revisión
@@ -129,73 +154,51 @@ const DashboardDocente = () => {
     return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  // Sección para renderizar los cursos del docente
-  const renderCursosDocente = () => {
-    if (!cursos || cursos.length === 0) {
-      return (
-        <div className="text-center py-4 text-gray-500">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          <p className="mt-2 text-sm">No tiene cursos asignados</p>
-        </div>
-      );
-    }
-    
-    return (
-      <ul className="divide-y divide-gray-200">
-        {cursos.map(curso => (
-          <li key={curso.id} className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-gray-900">{curso.nombre}</h4>
-                <p className="text-xs text-gray-500">
-                  {curso.codigo} | Asignatura: {curso.asignatura?.nombre || 'No asignada'}
-                </p>
-              </div>
-              <div className="ml-4 flex items-center">
-                <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                  {curso._count?.estudiantes || 0} estudiantes
-                </span>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    );
-  };
+  // Nueva función para mostrar tareas próximas (fusiona recientes y próximas a vencer)
+  const renderTareasProximas = () => {
+    // Mostrar tareas próximas a vencer (próximos 7 días) y recién creadas (últimos 7 días)
+    const ahora = new Date();
+    const hace7dias = new Date();
+    hace7dias.setDate(ahora.getDate() - 7);
+    const proximaSemana = new Date();
+    proximaSemana.setDate(ahora.getDate() + 7);
 
-  // Sección específica para renderizar las tareas recientes
-  const renderTareasRecientes = () => {
-    if (!tareasRecientes || tareasRecientes.length === 0) {
+    // Unir tareas recientes y próximas a vencer, sin duplicados
+    const tareasUnidas = [
+      ...(tareasRecientes || []),
+      ...(tareasRecientes || []).filter(t => {
+        const fechaEntrega = new Date(t.fechaEntrega);
+        return t.habilitada !== false && fechaEntrega >= ahora && fechaEntrega <= proximaSemana;
+      })
+    ].filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
+
+    if (!tareasUnidas || tareasUnidas.length === 0) {
       return (
         <div className="text-center py-4 text-gray-500">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
           </svg>
-          <p className="mt-2 text-sm">No hay tareas recientes</p>
+          <p className="mt-2 text-sm">No hay tareas próximas ni recientes</p>
         </div>
       );
     }
-    
     return (
       <ul className="divide-y divide-gray-200">
-        {tareasRecientes.map(tarea => {
-          // Calcular días restantes
+        {tareasUnidas.map(tarea => {
           const fechaEntrega = new Date(tarea.fechaEntrega);
-          const hoy = new Date();
-          const diasRestantes = Math.ceil((fechaEntrega - hoy) / (1000 * 60 * 60 * 24));
-          
-          // Determinar clases para estado visual
-          let statusClass = "bg-green-100 text-green-800"; // Por defecto: con tiempo
+          const diasRestantes = Math.ceil((fechaEntrega - ahora) / (1000 * 60 * 60 * 24));
+          let statusClass = "bg-green-100 text-green-800";
+          let statusText = "Con tiempo";
           if (tarea.habilitada === false) {
-            statusClass = "bg-gray-100 text-gray-800"; // Deshabilitada
-          } else if (fechaEntrega < hoy) {
-            statusClass = "bg-red-100 text-red-800"; // Vencida
+            statusClass = "bg-gray-100 text-gray-800";
+            statusText = "Deshabilitada";
+          } else if (fechaEntrega < ahora) {
+            statusClass = "bg-red-100 text-red-800";
+            statusText = "Vencida";
           } else if (diasRestantes <= 3) {
-            statusClass = "bg-yellow-100 text-yellow-800"; // Próxima a vencer
+            statusClass = "bg-yellow-100 text-yellow-800";
+            statusText = `${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}`;
           }
-          
           return (
             <li key={tarea.id} className="py-4">
               <div className="flex items-center justify-between">
@@ -210,15 +213,7 @@ const DashboardDocente = () => {
                 </div>
                 <div className="ml-4">
                   <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}`}>
-                    {tarea.habilitada === false ? 
-                      'Deshabilitada' : 
-                      (fechaEntrega < hoy ? 
-                        'Vencida' : 
-                        diasRestantes <= 3 ? 
-                          `${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}` : 
-                          'Con tiempo'
-                      )
-                    }
+                    {statusText}
                   </span>
                 </div>
               </div>
@@ -236,53 +231,95 @@ const DashboardDocente = () => {
     );
   };
 
-  // Renderizar próximos vencimientos
-  const renderProximosVencimientos = () => {
-    // Filtrar tareas próximas a vencer (habilitadas y con fecha en próxima semana)
-    const tareasProximas = tareasRecientes.filter(t => {
-      const fechaEntrega = new Date(t.fechaEntrega);
-      const hoy = new Date();
-      const proximaSemana = new Date();
-      proximaSemana.setDate(hoy.getDate() + 7);
-      return t.habilitada !== false && fechaEntrega >= hoy && fechaEntrega <= proximaSemana;
-    });
-    
-    if (tareasProximas.length === 0) {
+  // Mejorar sección de entregas por calificar: mostrar solo pendientes y acceso directo
+  const renderEntregasPendientes = () => {
+    if (!entregasRecientes || entregasRecientes.length === 0) {
       return (
         <div className="text-center py-6 text-gray-500">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
           </svg>
-          <p className="mt-2 text-sm">No hay tareas con vencimiento próximo</p>
+          <p className="mt-2 text-sm">No hay entregas pendientes por calificar</p>
         </div>
       );
     }
-    
     return (
-      <div className="space-y-4">
-        {tareasProximas.map(tarea => {
-          const fechaEntrega = new Date(tarea.fechaEntrega);
-          const hoy = new Date();
-          const diasRestantes = Math.ceil((fechaEntrega - hoy) / (1000 * 60 * 60 * 24));
-          
-          return (
-            <div key={tarea.id} className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900">{tarea.titulo}</h4>
-                  <p className="text-xs text-gray-500 mt-1">Vence en {diasRestantes} día{diasRestantes !== 1 ? 's' : ''}</p>
+      <ul className="divide-y divide-gray-200">
+        {entregasRecientes
+          .filter(entrega => entrega.calificacion === null || entrega.calificacion === undefined)
+          .map(entrega => (
+            <li key={entrega.id} className="py-4">
+              <div className="block hover:bg-gray-50 p-2 rounded-lg transition-colors duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 truncate">{entrega.tarea?.titulo || 'Tarea sin título'}</p>
+                    <p className="text-xs text-gray-500">
+                      Estudiante: {entrega.estudiante?.firstName} {entrega.estudiante?.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Entregado: {formatDate(entrega.fechaEntrega || entrega.createdAt)}
+                    </p>
+                  </div>
+                  <div className="ml-4 flex items-center space-x-2">
+                    <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                      Pendiente
+                    </span>
+                    <Link 
+                      to={`/docente/tareas/${entrega.tareaId}/calificar`}
+                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                    >
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Calificar
+                    </Link>
+                  </div>
                 </div>
-                <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                  {fechaEntrega.toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit'
-                  })}
+              </div>
+            </li>
+          ))}
+      </ul>
+    );
+  };
+
+  // Mejorar cursos asignados: mostrar % de entregas realizadas por curso
+  const renderCursosDocente = () => {
+    if (!cursos || cursos.length === 0) {
+      return (
+        <div className="text-center py-4 text-gray-500">
+          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          <p className="mt-2 text-sm">No tiene cursos asignados</p>
+        </div>
+      );
+    }
+    return (
+      <ul className="divide-y divide-gray-200">
+        {cursos.map(curso => (
+          <li key={curso.id} className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-gray-900">{curso.nombre}</h4>
+                <p className="text-xs text-gray-500">
+                  {curso.codigo} | Asignatura: {curso.asignatura?.nombre || 'No asignada'}
+                </p>
+              </div>
+              <div className="ml-4 flex flex-col items-end">
+                <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                  {curso._count?.estudiantes || 0} estudiantes
                 </span>
+                {/* Si tienes datos de entregas por curso, muestra el porcentaje */}
+                {curso.entregasTotales && curso.entregasEsperadas ? (
+                  <span className="text-xs text-gray-500 mt-1">
+                    {Math.round((curso.entregasTotales / curso.entregasEsperadas) * 100)}% entregas
+                  </span>
+                ) : null}
               </div>
             </div>
-          );
-        })}
-      </div>
+          </li>
+        ))}
+      </ul>
     );
   };
 
@@ -303,7 +340,7 @@ const DashboardDocente = () => {
       </div>
       
       {/* Estadísticas del docente */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
           <div className="p-5">
             <div className="flex items-center">
@@ -379,6 +416,38 @@ const DashboardDocente = () => {
               <div className="ml-4">
                 <h2 className="text-sm font-medium text-gray-600">Entregas pendientes</h2>
                 <p className="text-2xl font-semibold text-gray-900">{stats.entregasPendientes}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="bg-red-50 text-red rounded-full p-3">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div className="ml-4">
+                <h2 className="text-sm font-medium text-gray-600">Tareas vencidas</h2>
+                <p className="text-2xl font-semibold text-gray-900">{extraStats.tareasVencidas}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="bg-indigo-50 text-indigo rounded-full p-3">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <h2 className="text-sm font-medium text-gray-600">Promedio calificaciones</h2>
+                <p className="text-2xl font-semibold text-gray-900">{extraStats.promedioCalificaciones ?? '--'}</p>
               </div>
             </div>
           </div>
@@ -482,20 +551,19 @@ const DashboardDocente = () => {
       
       {/* Secciones principales del dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Tareas recientes */}
+        {/* Tareas próximas (fusiona recientes y próximas a vencer) */}
         <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
           <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-900">Tareas recientes</h3>
+            <h3 className="text-lg font-medium text-gray-900">Tareas próximas</h3>
             <Link to="/docente/tareas" className="text-sm text-primary hover:text-primary-dark font-medium">
               Ver todas
             </Link>
           </div>
           <div className="px-4 py-5 sm:p-6">
-            {renderTareasRecientes()}
+            {renderTareasProximas()}
           </div>
         </div>
-        
-        {/* Cursos asignados */}
+        {/* Cursos asignados mejorados */}
         <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
           <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900">Mis cursos</h3>
@@ -505,18 +573,7 @@ const DashboardDocente = () => {
           </div>
         </div>
       </div>
-      
-      {/* Próximos vencimientos */}
-      <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100">
-        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Próximos vencimientos</h3>
-        </div>
-        <div className="p-6">
-          {renderProximosVencimientos()}
-        </div>
-      </div>
-      
-      {/* Entregas pendientes */}
+      {/* Entregas pendientes mejoradas */}
       <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-100 mt-6">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-medium text-gray-900">Entregas por calificar</h3>
@@ -525,48 +582,7 @@ const DashboardDocente = () => {
           </Link>
         </div>
         <div className="px-4 py-5 sm:p-6">
-          {entregasRecientes && entregasRecientes.length > 0 ? (
-            <ul className="divide-y divide-gray-200">
-              {entregasRecientes.map(entrega => (
-                <li key={entrega.id} className="py-4">
-                  <div className="block hover:bg-gray-50 p-2 rounded-lg transition-colors duration-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 truncate">{entrega.tarea?.titulo || 'Tarea sin título'}</p>
-                        <p className="text-xs text-gray-500">
-                          Estudiante: {entrega.estudiante?.firstName} {entrega.estudiante?.lastName}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Entregado: {formatDate(entrega.fechaEntrega || entrega.createdAt)}
-                        </p>
-                      </div>
-                      <div className="ml-4 flex items-center space-x-2">
-                        <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                          Pendiente
-                        </span>
-                        <Link 
-                          to={`/docente/tareas/${entrega.tareaId}/calificar`}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                        >
-                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Calificar
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-center py-6 text-gray-500">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <p className="mt-2 text-sm">No hay entregas pendientes por calificar</p>
-            </div>
-          )}
+          {renderEntregasPendientes()}
         </div>
       </div>
     </div>
