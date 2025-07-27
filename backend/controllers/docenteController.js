@@ -851,12 +851,14 @@ try {
     return res.status(403).json({ status: 'error', message: 'No tienes permisos para calificar esta entrega' });
   }
 
-  // Actualizar la entrega con la calificación
-  const entregaActualizada = await prisma.entrega.update({
-    where: { id: entregaId },
+  // Crear retroalimentación usando el modelo Retroalimentacion
+  const retroalimentacion = await prisma.retroalimentacion.create({
     data: {
-      calificacion: parseFloat(calificacion),
-      observaciones: observaciones || null
+      tareaId: entrega.tareaId,
+      estudianteId: entrega.estudianteId,
+      nota: parseFloat(calificacion),
+      observacion: observaciones || '',
+      notificado: false
     },
     include: {
       estudiante: {
@@ -876,14 +878,86 @@ try {
     }
   });
 
+  // También actualizar la entrega para mantener compatibilidad temporal
+  await prisma.entrega.update({
+    where: { id: entregaId },
+    data: {
+      calificacion: parseFloat(calificacion),
+      observaciones: observaciones || null
+    }
+  });
+
   res.status(200).json({ 
     status: 'success', 
     message: 'Entrega calificada correctamente',
-    data: entregaActualizada 
+    data: {
+      ...retroalimentacion,
+      entregaId: entregaId
+    }
   });
 } catch (error) {
   console.error('Error en calificarEntrega:', error);
   res.status(500).json({ status: 'error', message: 'Error al calificar la entrega' });
+}
+};
+
+// Obtener retroalimentaciones de una entrega específica
+const getRetroalimentacionesEntrega = async (req, res) => {
+try {
+  const { entregaId } = req.params;
+  const entregaIdNum = Number(entregaId);
+
+  // Verificar que la entrega existe
+  const entrega = await prisma.entrega.findUnique({
+    where: { id: entregaIdNum },
+    include: {
+      tarea: true
+    }
+  });
+
+  if (!entrega) {
+    return res.status(404).json({ status: 'error', message: 'Entrega no encontrada' });
+  }
+
+  // Verificar que el docente tiene permisos
+  if (entrega.tarea.docenteId !== req.user.id) {
+    return res.status(403).json({ status: 'error', message: 'No tienes permisos para ver las retroalimentaciones de esta entrega' });
+  }
+
+  // Obtener todas las retroalimentaciones de esta entrega
+  const retroalimentaciones = await prisma.retroalimentacion.findMany({
+    where: {
+      tareaId: entrega.tareaId,
+      estudianteId: entrega.estudianteId
+    },
+    include: {
+      estudiante: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      },
+      tarea: {
+        select: {
+          id: true,
+          titulo: true
+        }
+      }
+    },
+    orderBy: {
+      fecha: 'desc'
+    }
+  });
+
+  res.status(200).json({ 
+    status: 'success', 
+    data: retroalimentaciones 
+  });
+} catch (error) {
+  console.error('Error en getRetroalimentacionesEntrega:', error);
+  res.status(500).json({ status: 'error', message: 'Error al obtener las retroalimentaciones' });
 }
 };
 
@@ -947,5 +1021,6 @@ module.exports = {
   subirMaterial,
   getEntregaDetails,
   calificarEntrega,
+  getRetroalimentacionesEntrega,
   listarEntregasTarea
 };

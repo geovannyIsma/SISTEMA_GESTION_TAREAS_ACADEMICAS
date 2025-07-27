@@ -12,6 +12,7 @@ const CalificarEntregas = () => {
   const [tarea, setTarea] = useState(null);
   const [entregas, setEntregas] = useState([]);
   const [selectedEntrega, setSelectedEntrega] = useState(null);
+  const [retroalimentaciones, setRetroalimentaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -53,6 +54,7 @@ const CalificarEntregas = () => {
     if (selectedEntrega?.id === entrega.id) {
       // Deselect if clicking the same submission
       setSelectedEntrega(null);
+      setRetroalimentaciones([]);
       setCalificacion('');
       setObservaciones('');
       return;
@@ -60,10 +62,32 @@ const CalificarEntregas = () => {
 
     setLoadingDetails(true);
     try {
+      // Load submission details
       const response = await api.getEntregaDetails(entrega.id);
       setSelectedEntrega(response.data);
-      setCalificacion(response.data.calificacion || '');
-      setObservaciones(response.data.observaciones || '');
+      
+      // Load existing retroalimentaciones for this entrega
+      try {
+        const retroResponse = await api.get(`/docente/entregas/${entrega.id}/retroalimentaciones`);
+        setRetroalimentaciones(retroResponse.data.data || []);
+        
+        // If there are retroalimentaciones, use the most recent one for the form
+        if (retroResponse.data.data && retroResponse.data.data.length > 0) {
+          const latestRetro = retroResponse.data.data[0]; // Already ordered by fecha desc
+          setCalificacion(latestRetro.calificacion || '');
+          setObservaciones(latestRetro.comentarios || '');
+        } else {
+          // Fallback to legacy fields if no retroalimentaciones exist
+          setCalificacion(response.data.calificacion || '');
+          setObservaciones(response.data.observaciones || '');
+        }
+      } catch (retroError) {
+        console.warn('Error loading retroalimentaciones:', retroError);
+        // Fallback to legacy fields
+        setCalificacion(response.data.calificacion || '');
+        setObservaciones(response.data.observaciones || '');
+        setRetroalimentaciones([]);
+      }
     } catch (error) {
       console.error('Error loading submission details:', error);
       showAlert('error', error.message || 'Error al cargar detalles de la entrega');
@@ -89,6 +113,14 @@ const CalificarEntregas = () => {
         calificacion: parseFloat(calificacion),
         observaciones: observaciones.trim() || null
       });
+
+      // Refresh retroalimentaciones after grading
+      try {
+        const retroResponse = await api.get(`/docente/entregas/${selectedEntrega.id}/retroalimentaciones`);
+        setRetroalimentaciones(retroResponse.data.data || []);
+      } catch (retroError) {
+        console.warn('Error refreshing retroalimentaciones:', retroError);
+      }
 
       // Update the submissions list
       setEntregas(prev => prev.map(entrega => 
@@ -328,6 +360,53 @@ const CalificarEntregas = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Retroalimentaciones History */}
+              {retroalimentaciones.length > 0 && (
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">
+                    Historial de Retroalimentaciones ({retroalimentaciones.length})
+                  </h3>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {retroalimentaciones.map((retro, index) => (
+                      <div key={retro.id} className="bg-gray-50 rounded-md p-3 border-l-4 border-l-blue-500">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium text-gray-900">
+                              Calificación: {retro.calificacion}/10
+                            </span>
+                            {index === 0 && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                Más reciente
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {new Date(retro.fecha).toLocaleString()}
+                          </span>
+                        </div>
+                        {retro.comentarios && (
+                          <p className="text-sm text-gray-700 mt-2">
+                            {retro.comentarios}
+                          </p>
+                        )}
+                        {retro.archivoUrl && (
+                          <div className="mt-2">
+                            <a
+                              href={`http://localhost:3000${retro.archivoUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:text-primary-dark text-xs font-medium"
+                            >
+                              📎 Ver archivo adjunto
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Grading Form */}
               <div className="px-6 py-4">

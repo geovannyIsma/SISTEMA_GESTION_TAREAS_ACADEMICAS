@@ -14,7 +14,8 @@ const {
   getEntregaEstudiante,
   getEntregasEstudiante,
   eliminarEntrega,
-  eliminarArchivoEntrega
+  eliminarArchivoEntrega,
+  getRetroalimentacionesEstudiante
 } = require('../controllers/estudianteController');
 const { protect } = require('../middleware/authMiddleware');
 const { estudianteOnly } = require('../middleware/estudianteMiddleware');
@@ -85,6 +86,7 @@ router.delete('/tareas/:tareaId/entrega/archivos/:archivoId', eliminarArchivoEnt
 
 // Rutas para entregas
 router.get('/entregas', getEntregasEstudiante);
+router.get('/entregas/:entregaId/retroalimentaciones', getRetroalimentacionesEstudiante);
 
 // Rutas para cursos
 router.get('/cursos', listarCursosEstudiante);

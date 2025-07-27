@@ -836,6 +836,58 @@ const eliminarEntrega = async (req, res) => {
   }
 };
 
+// Obtener retroalimentaciones de una entrega del estudiante
+const getRetroalimentacionesEstudiante = async (req, res) => {
+try {
+  const { entregaId } = req.params;
+  const estudianteId = req.user.id;
+  const entregaIdNum = Number(entregaId);
+
+  // Verificar que la entrega existe y pertenece al estudiante
+  const entrega = await prisma.entrega.findUnique({
+    where: { id: entregaIdNum },
+    include: {
+      tarea: true
+    }
+  });
+
+  if (!entrega) {
+    return res.status(404).json({ status: 'error', message: 'Entrega no encontrada' });
+  }
+
+  if (entrega.estudianteId !== estudianteId) {
+    return res.status(403).json({ status: 'error', message: 'No tienes permisos para ver las retroalimentaciones de esta entrega' });
+  }
+
+  // Obtener todas las retroalimentaciones de esta entrega
+  const retroalimentaciones = await prisma.retroalimentacion.findMany({
+    where: {
+      tareaId: entrega.tareaId,
+      estudianteId: estudianteId
+    },
+    include: {
+      tarea: {
+        select: {
+          id: true,
+          titulo: true
+        }
+      }
+    },
+    orderBy: {
+      fecha: 'desc'
+    }
+  });
+
+  res.status(200).json({ 
+    status: 'success', 
+    data: retroalimentaciones 
+  });
+} catch (error) {
+  console.error('Error en getRetroalimentacionesEstudiante:', error);
+  res.status(500).json({ status: 'error', message: 'Error al obtener las retroalimentaciones' });
+}
+};
+
 module.exports = { 
   listarTareasEstudiante,
   listarCursosEstudiante,
@@ -847,5 +899,6 @@ module.exports = {
   getEntregaEstudiante,
   getEntregasEstudiante,
   eliminarArchivoEntrega,
-  eliminarEntrega
+  eliminarEntrega,
+  getRetroalimentacionesEstudiante
 };

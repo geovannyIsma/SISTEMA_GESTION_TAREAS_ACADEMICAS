@@ -15,6 +15,7 @@ const TareaDetalleEstudiante = () => {
   const [loading, setLoading] = useState(true);
   const [tarea, setTarea] = useState(null);
   const [entrega, setEntrega] = useState(null);
+  const [retroalimentaciones, setRetroalimentaciones] = useState([]);
   const [archivo, setArchivo] = useState(null);
   const [comentario, setComentario] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -36,6 +37,15 @@ const TareaDetalleEstudiante = () => {
         if (entregaResponse.data) {
           setEntrega(entregaResponse.data);
           setComentario(entregaResponse.data.comentario || '');
+          
+          // Cargar retroalimentaciones si existe la entrega
+          try {
+            const retroResponse = await api.get(`/estudiante/entregas/${entregaResponse.data.id}/retroalimentaciones`);
+            setRetroalimentaciones(retroResponse.data.data || []);
+          } catch (retroError) {
+            console.warn('Error loading retroalimentaciones:', retroError);
+            setRetroalimentaciones([]);
+          }
         }
       } catch (err) {
         showAlert('error', err.message || 'Error al cargar la información de la tarea');
@@ -635,21 +645,86 @@ const TareaDetalleEstudiante = () => {
             </div>
           )}
 
-          {/* Detalles de la entrega ya calificada */}
-          {tarea?.calificada && entrega && (
-            <div className="bg-gray-50 shadow-sm overflow-hidden rounded-lg border border-gray-100">
+          {/* Retroalimentaciones del docente */}
+          {retroalimentaciones.length > 0 && (
+            <div className="bg-white shadow-sm overflow-hidden rounded-lg border border-gray-200">
               <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">
+                  Retroalimentaciones del Docente ({retroalimentaciones.length})
+                </h2>
+              </div>
+              <div className="px-4 py-5 sm:p-6">
+                <div className="space-y-4">
+                  {retroalimentaciones.map((retro, index) => (
+                    <div key={retro.id} className={`border rounded-lg p-4 ${
+                      index === 0 ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'
+                    }`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="text-2xl font-bold text-primary">
+                            {retro.calificacion}<span className="text-sm text-gray-500">/{tarea?.notaMaxima || 10}</span>
+                          </div>
+                          {index === 0 && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Calificación actual
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {new Date(retro.fecha).toLocaleString()}
+                        </div>
+                      </div>
+                      
+                      {retro.comentarios && (
+                        <div className="mb-3">
+                          <h4 className="text-sm font-medium text-gray-900 mb-2">Comentarios:</h4>
+                          <div className="bg-white rounded-md p-3 border">
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{retro.comentarios}</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {retro.archivoUrl && (
+                        <div className="mt-3">
+                          <a
+                            href={`${API_BASE_URL}${retro.archivoUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-sm text-primary hover:text-primary-dark font-medium"
+                          >
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            Ver archivo adjunto
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Fallback: Mostrar calificación legacy si no hay retroalimentaciones pero sí calificación */}
+          {retroalimentaciones.length === 0 && entrega?.calificacion !== null && (
+            <div className="bg-yellow-50 shadow-sm overflow-hidden rounded-lg border border-yellow-200">
+              <div className="px-4 py-5 sm:px-6 border-b border-yellow-200">
                 <h2 className="text-lg font-medium text-gray-900">Calificación</h2>
+                <p className="text-sm text-yellow-700 mt-1">Calificación en formato anterior</p>
               </div>
               <div className="px-4 py-5 sm:p-6">
                 <div className="flex justify-center">
                   <div className="text-4xl font-bold text-primary">
-                    {tarea.calificacion} <span className="text-xl text-gray-500">/ {tarea.notaMaxima || 10}</span>
+                    {entrega.calificacion} <span className="text-xl text-gray-500">/ {tarea?.notaMaxima || 10}</span>
                   </div>
                 </div>
-                {entrega.fechaCalificacion && (
-                  <div className="text-center text-sm text-gray-500 mt-2">
-                    Calificado el {formatDateTime(entrega.fechaCalificacion)}
+                {entrega.observaciones && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Observaciones:</h4>
+                    <div className="bg-white rounded-md p-3 border">
+                      <p className="text-sm text-gray-700">{entrega.observaciones}</p>
+                    </div>
                   </div>
                 )}
               </div>
