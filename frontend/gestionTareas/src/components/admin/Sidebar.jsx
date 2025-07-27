@@ -186,14 +186,6 @@ const Sidebar = ({ isOpen }) => {
               {icons.cursos}
               Cursos
             </Link>
-            <Link to="/reportes" className={getLinkClass('/reportes')}>
-              {icons.reportes}
-              Reportes
-            </Link>
-            <Link to="/estadisticas" className={getLinkClass('/estadisticas')}>
-              {icons.estadisticas}
-              Estadísticas
-            </Link>
           </>
         )}
 
@@ -217,10 +209,6 @@ const Sidebar = ({ isOpen }) => {
             <Link to="/estudiante/tareas" className={getLinkClass('/estudiante/tareas')}>
               {icons.tasks}
               Mis Cursos
-            </Link>
-            <Link to="/estudiante/mensajes" className={getLinkClass('/estudiante/mensajes')}>
-              {icons.mensajes}
-              Mensajes
             </Link>
           </>
         )}
