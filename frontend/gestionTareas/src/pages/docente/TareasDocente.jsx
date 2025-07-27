@@ -285,16 +285,34 @@ const TareasDocente = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {tarea.archivoUrl ? (
-                        <a 
-                          href= {tarea.archivoUrl.startsWith('http') ? tarea.archivoUrl : 
-                            `${API_BASE_URL}/${tarea.archivoUrl.replace(/^\//, '')}` } 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="text-primary hover:text-primary-dark font-medium"
-                        >
-                          Ver material
-                        </a>
+                      {tarea.archivosMaterial && tarea.archivosMaterial.length > 0 ? (
+                        <div className="space-y-1">
+                          {tarea.archivosMaterial.slice(0, 2).map((material, index) => (
+                            <div key={material.id} className="flex items-center space-x-2">
+                              <a 
+                                href={material.url.startsWith('http') ? 
+                                  material.url : 
+                                  `${API_BASE_URL}${material.url}`}
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="text-primary hover:text-primary-dark font-medium text-sm"
+                                title={material.nombre}
+                              >
+                                {material.nombre.length > 15 ? 
+                                  `${material.nombre.substring(0, 15)}...` : 
+                                  material.nombre}
+                              </a>
+                              <span className="text-xs text-gray-500">
+                                ({material.tipo})
+                              </span>
+                            </div>
+                          ))}
+                          {tarea.archivosMaterial.length > 2 && (
+                            <div className="text-xs text-gray-500">
+                              +{tarea.archivosMaterial.length - 2} más
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-gray-500">Sin material</span>
                       )}

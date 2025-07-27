@@ -27,7 +27,7 @@ const crearTarea = async (req, res) => {
 const editarTarea = async (req, res) => {
   try {
     const { id } = req.params;
-    const { titulo, descripcion, fechaEntrega, archivoUrl, habilitada } = req.body;
+    const { titulo, descripcion, fechaEntrega, habilitada } = req.body;
     const tarea = await prisma.tarea.findUnique({
       where: { id: Number(id) },
       include: {
@@ -69,7 +69,7 @@ const editarTarea = async (req, res) => {
         titulo: titulo || tarea.titulo,
         descripcion: descripcion || tarea.descripcion,
         fechaEntrega: fechaEntrega ? new Date(fechaEntrega) : tarea.fechaEntrega,
-        archivoUrl: archivoUrl !== undefined ? archivoUrl : tarea.archivoUrl,
+
         habilitada: typeof habilitada === 'boolean' ? habilitada : tarea.habilitada,
       },
     });
@@ -159,6 +159,9 @@ const listarTareasDocente = async (req, res) => {
     console.log('Usuario autenticado:', req.user);
     const tareas = await prisma.tarea.findMany({
       where: { docenteId: req.user.id },
+      include: {
+        archivosMaterial: true
+      },
       orderBy: { 
         fechaEntrega: 'desc' 
       }
@@ -291,7 +294,10 @@ const getTareaById = async (req, res) => {
     
     // Buscar la tarea y verificar que pertenezca al docente autenticado
     const tarea = await prisma.tarea.findUnique({
-      where: { id: tareaId }
+      where: { id: tareaId },
+      include: {
+        archivosMaterial: true
+      }
     });
 
     if (!tarea) {
@@ -645,7 +651,12 @@ const eliminarTarea = async (req, res) => {
     
     // Usar transacción para garantizar la integridad de los datos
     await prisma.$transaction(async (prisma) => {
-      // Eliminar las asignaciones de la tarea primero
+      // Eliminar los archivos de material asociados primero
+      await prisma.archivoMaterial.deleteMany({
+        where: { tareaId }
+      });
+      
+      // Eliminar las asignaciones de la tarea
       await prisma.tareaAsignacion.deleteMany({
         where: { tareaId }
       });
@@ -663,12 +674,66 @@ const eliminarTarea = async (req, res) => {
   }
 };
 
-// Subir material docente
+// Eliminar material de una tarea
+const eliminarMaterial = async (req, res) => {
+  try {
+    const { id } = req.params; // ID del archivo material
+    const archivoId = Number(id);
+
+    // Verificar que el archivo existe
+    const archivo = await prisma.archivoMaterial.findUnique({
+      where: { id: archivoId },
+      include: {
+        tarea: true
+      }
+    });
+
+    if (!archivo) {
+      return res.status(404).json({ status: 'error', message: 'Archivo no encontrado' });
+    }
+
+    // Verificar que la tarea pertenece al docente
+    if (archivo.tarea.docenteId !== req.user.id) {
+      return res.status(403).json({ status: 'error', message: 'No tiene permisos para eliminar este archivo' });
+    }
+
+    // Eliminar el archivo de la base de datos
+    await prisma.archivoMaterial.delete({
+      where: { id: archivoId }
+    });
+
+    res.status(200).json({ 
+      status: 'success', 
+      message: 'Material eliminado correctamente'
+    });
+  } catch (error) {
+    console.error('Error al eliminar material:', error);
+    res.status(500).json({ status: 'error', message: 'Error al eliminar el material' });
+  }
+};
+
+// Subir material docente y asociarlo a una tarea
 const subirMaterial = async (req, res) => {
   try {
+    const { tareaId } = req.body;
+    
     // Verifica que se haya subido un archivo
     if (!req.file) {
       return res.status(400).json({ status: 'error', message: 'No se ha proporcionado ningún archivo' });
+    }
+
+    // Verificar que se proporcione el ID de la tarea
+    if (!tareaId) {
+      return res.status(400).json({ status: 'error', message: 'ID de tarea es requerido' });
+    }
+
+    // Verificar que la tarea existe y pertenece al docente
+    const tarea = await prisma.tarea.findUnique({
+      where: { id: Number(tareaId) }
+    });
+
+    if (!tarea || tarea.docenteId !== req.user.id) {
+      return res.status(404).json({ status: 'error', message: 'Tarea no encontrada o sin permisos' });
     }
 
     // Ruta relativa del archivo para guardar en la base de datos
@@ -686,21 +751,21 @@ const subirMaterial = async (req, res) => {
     // Obtener tamaño en MB
     const fileSizeMB = req.file.size / (1024 * 1024);
 
-    // Crear respuesta con información del archivo
-    const fileInfo = {
-      url: archivoUrl,
-      originalName: req.file.originalname,
-      filename: req.file.filename,
-      size: req.file.size,
-      sizeMB: fileSizeMB.toFixed(2),
-      type: fileType,
-      mimetype: req.file.mimetype
-    };
+    // Crear registro de ArchivoMaterial en la base de datos
+    const archivoMaterial = await prisma.archivoMaterial.create({
+      data: {
+        tareaId: Number(tareaId),
+        url: archivoUrl,
+        nombre: req.file.originalname,
+        tipo: fileType,
+        sizeMB: fileSizeMB
+      }
+    });
 
     res.status(200).json({ 
       status: 'success', 
       message: 'Material subido correctamente',
-      data: fileInfo
+      data: archivoMaterial
     });
   } catch (error) {
     console.error('Error al subir material:', error);
@@ -720,5 +785,6 @@ module.exports = {
   listarEntregasPendientes,
   getEstadisticasDocente,
   eliminarTarea,
-  subirMaterial
+  subirMaterial,
+  eliminarMaterial
 };

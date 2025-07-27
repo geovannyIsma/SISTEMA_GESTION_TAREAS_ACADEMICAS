@@ -82,6 +82,17 @@ model Curso {
   asignaciones TareaAsignacion[]
 }
 
+model ArchivoMaterial {
+  id        Int      @id @default(autoincrement())
+  tareaId   Int
+  tarea     Tarea    @relation(fields: [tareaId], references: [id])
+  url       String
+  nombre    String
+  tipo      String   // PDF, ZIP, IMG, OTRO
+  sizeMB    Float
+  createdAt DateTime @default(now())
+}
+
 model Tarea {
   id                         Int                  @id @default(autoincrement())
   titulo                     String
@@ -89,7 +100,6 @@ model Tarea {
   fechaEntrega               DateTime
   docenteId                  Int
   docente                    User                 @relation("UserTareasDocente", fields: [docenteId], references: [id])
-  archivoUrl                 String?
   habilitada                 Boolean              @default(true)
   notaMaxima                 Float                @default(10.0)
   editableHastaUltimaEntrega Boolean             @default(true)
@@ -97,6 +107,7 @@ model Tarea {
   asignaciones               TareaAsignacion[]
   entregas                   Entrega[]
   retroalimentaciones        Retroalimentacion[]
+  archivosMaterial           ArchivoMaterial[]
 }
 
 model TareaAsignacion {

@@ -212,23 +212,13 @@ const api = {
   eliminarArchivoEntrega: (tareaId, archivoId) => 
     apiRequest(`/estudiante/tareas/${tareaId}/entrega/archivos/${archivoId}`, 'DELETE'),
 
+  // Material de tareas (ArchivoMaterial)
   subirMaterial: (formData) => {
-    const token = localStorage.getItem('token');
-    
-    return fetch(`${API_URL}/docente/material/upload`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
-    }).then(response => {
-      if (!response.ok) {
-        return response.json().then(data => {
-          throw new Error(data.message || `Error ${response.status}: ${response.statusText}`);
-        });
-      }
-      return response.json();
-    });
+    return apiRequest('/docente/material/upload', 'POST', formData);
+  },
+  
+  eliminarMaterial: (materialId) => {
+    return apiRequest(`/docente/material/${materialId}`, 'DELETE');
   },
 };
 

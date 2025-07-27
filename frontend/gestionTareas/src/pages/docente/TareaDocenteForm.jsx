@@ -21,9 +21,12 @@ const TareaDocenteForm = () => {
     fechaCierre: '',
     notaMaxima: 10,
     habilitada: true,
-    archivoUrl: '',
     editableHastaUltimaEntrega: true
   });
+  
+  // Estado para archivos de material
+  const [archivosMaterial, setArchivosMaterial] = useState([]);
+  const [pendingFiles, setPendingFiles] = useState([]); // Archivos pendientes de subir (para modo creación)
   
   // Add submission status state
   const [submissionStatus, setSubmissionStatus] = useState({
@@ -92,9 +95,13 @@ const TareaDocenteForm = () => {
             fechaCierre: fechaCierre,
             notaMaxima: tareaData.notaMaxima || 10,
             habilitada: tareaData.habilitada !== false, // Si no existe, asumimos true
-            archivoUrl: tareaData.archivoUrl || '',
             editableHastaUltimaEntrega: tareaData.editableHastaUltimaEntrega !== false // Si no existe, asumimos true
           });
+          
+          // Cargar archivos de material si existen
+          if (tareaData.archivosMaterial && Array.isArray(tareaData.archivosMaterial)) {
+            setArchivosMaterial(tareaData.archivosMaterial);
+          }
           
           // Fetch submission status for this task
           if (tareaData.editableHastaUltimaEntrega !== false) {
@@ -207,56 +214,119 @@ const TareaDocenteForm = () => {
     }
   };
 
-  const handleFileChange = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
-
-    // Verificar tamaño del archivo (50MB máximo)
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB en bytes
-    if (selectedFile.size > MAX_FILE_SIZE) {
-      showAlert('error', 'El archivo es demasiado grande. El tamaño máximo es de 50MB.');
-      e.target.value = ''; // Limpiar el input
+  // Función para manejar la selección de archivos
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validar tamaño del archivo (máximo 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB en bytes
+    if (file.size > maxSize) {
+      showAlert('error', 'El archivo es demasiado grande. Máximo 50MB permitido.');
+      e.target.value = '';
       return;
     }
-
-    setArchivo(selectedFile);
-
+    
+    if (isEditMode) {
+      // Modo edición: subir archivo inmediatamente
+      await uploadFileToServer(file);
+    } else {
+      // Modo creación: almacenar archivo temporalmente
+      const fileData = {
+        file,
+        id: Date.now() + Math.random(), // ID temporal
+        nombre: file.name,
+        sizeMB: file.size / (1024 * 1024),
+        tipo: getFileType(file.name),
+        isPending: true
+      };
+      setPendingFiles(prev => [...prev, fileData]);
+      showAlert('success', 'Archivo agregado correctamente.');
+    }
+    
+    e.target.value = ''; // Limpiar el input
+  };
+  
+  // Función para subir archivo al servidor
+  const uploadFileToServer = async (file) => {
     try {
       const formData = new FormData();
-      formData.append('archivo', selectedFile);
-
-      // Mostrar mensaje de carga
-      showAlert('info', 'Subiendo material, por favor espere...');
-
-      // Realizar la subida del archivo
-      const response = await api.post('/docente/material/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: (progressEvent) => {
-          // Calcular y actualizar el progreso
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(progress);
-        }
-      });
-
-      if (response.data && response.data.status === 'success') {
-        // Actualizar estado con la URL del archivo
-        setFormData(prevData => ({
-          ...prevData,
-          archivoUrl: response.data.data.url
-        }));
-        
+      formData.append('archivo', file);
+      formData.append('tareaId', id);
+      
+      setUploadProgress(30);
+      
+      const response = await api.subirMaterial(formData);
+      
+      setUploadProgress(100);
+      
+      if (response.status === 'success') {
+        setArchivosMaterial(prev => [...prev, response.data]);
         showAlert('success', 'Material subido correctamente');
       }
     } catch (error) {
       console.error('Error al subir el archivo:', error);
       showAlert('error', 'Error al subir el archivo: ' + (error.response?.data?.message || error.message));
-      e.target.value = ''; // Limpiar el input
     } finally {
       setUploadProgress(0);
     }
   };
+  
+  // Función para obtener el tipo de archivo
+  const getFileType = (filename) => {
+    const extension = filename.split('.').pop().toLowerCase();
+    if (['pdf'].includes(extension)) return 'PDF';
+    if (['zip', 'rar', '7z'].includes(extension)) return 'ZIP';
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(extension)) return 'IMG';
+    if (['doc', 'docx'].includes(extension)) return 'DOC';
+    return 'FILE';
+  };
+  
+  // Función para subir archivos pendientes después de crear la tarea
+  const uploadPendingFiles = async (tareaId) => {
+    if (pendingFiles.length === 0) return;
+    
+    try {
+      for (const fileData of pendingFiles) {
+        const formData = new FormData();
+        formData.append('archivo', fileData.file);
+        formData.append('tareaId', tareaId);
+        
+        const response = await api.subirMaterial(formData);
+        if (response.status === 'success') {
+          setArchivosMaterial(prev => [...prev, response.data]);
+        }
+      }
+      setPendingFiles([]);
+      showAlert('success', 'Archivos de material subidos correctamente');
+    } catch (error) {
+      console.error('Error al subir archivos pendientes:', error);
+      showAlert('error', 'Error al subir algunos archivos de material');
+    }
+  };
+
+  // Función para eliminar material
+  const handleDeleteMaterial = async (materialId) => {
+    // Verificar si es un archivo pendiente (modo creación)
+    const pendingFile = pendingFiles.find(file => file.id === materialId);
+    if (pendingFile) {
+      setPendingFiles(prev => prev.filter(file => file.id !== materialId));
+      showAlert('success', 'Archivo removido correctamente');
+      return;
+    }
+    
+    // Es un archivo ya subido (modo edición)
+    try {
+      await api.eliminarMaterial(materialId);
+      setArchivosMaterial(prev => prev.filter(material => material.id !== materialId));
+      showAlert('success', 'Material eliminado correctamente');
+    } catch (error) {
+      console.error('Error al eliminar material:', error);
+      showAlert('error', 'Error al eliminar el material: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+
 
   const validateField = (fieldName, value) => {
     let isValid = true;
@@ -363,25 +433,9 @@ const TareaDocenteForm = () => {
     setSubmitError('');
     
     try {
-      // Si hay un archivo para subir, hacerlo primero
-      let archivoUrl = formData.archivoUrl;
-      if (archivo) {
-        // Esta es una simplificación - normalmente aquí iría lógica para 
-        // subir el archivo a un servicio como AWS S3, Firebase Storage, etc.
-        // y luego obtener la URL.
-        const formDataFile = new FormData();
-        formDataFile.append('archivo', archivo);
-        
-        // Suponemos que existe un endpoint para subir archivos
-        const uploadResponse = await api.subirMaterial(formDataFile);
-        archivoUrl = uploadResponse.data.url;
-      }
-      
       // Crear o actualizar la tarea
-      // Para compatibilidad con el backend, añadimos también fechaEntrega como fechaCierre
       const tareaData = {
         ...formData,
-        archivoUrl,
         fechaEntrega: formData.fechaCierre  // Para compatibilidad con el backend actual
       };
       
@@ -390,9 +444,18 @@ const TareaDocenteForm = () => {
         showAlert('success', 'Tarea actualizada correctamente');
         navigate('/docente/tareas');
       } else {
-        await api.crearTarea(tareaData);
-        showAlert('success', 'Tarea creada correctamente');
-        navigate('/docente/tareas')
+        const response = await api.crearTarea(tareaData);
+        if (response.status === 'success') {
+          const nuevaTareaId = response.data.id;
+          
+          // Subir archivos pendientes si los hay
+          if (pendingFiles.length > 0) {
+            await uploadPendingFiles(nuevaTareaId);
+          }
+          
+          showAlert('success', 'Tarea creada correctamente');
+          navigate('/docente/tareas');
+        }
       }
     } catch (err) {
       setSubmitError(err.message || 'Ocurrió un error al guardar la tarea');
@@ -605,49 +668,134 @@ const TareaDocenteForm = () => {
               />
             </div>
 
-            {/* File upload section with progress indicator */}
+            {/* Material files section */}
             <div className="mb-6">
-              <label htmlFor="archivo" className="block text-sm font-medium text-gray-700 mb-1">
-                Material de apoyo (opcional)
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Material de apoyo
               </label>
-              <div className="mt-1">
+              
+              {/* Upload material files */}
+              <div className="mb-4">
                 <input
                   type="file"
                   id="archivo"
                   ref={fileInputRef}
-                  onChange={handleFileChange}
+                  onChange={handleFileUpload}
                   disabled={isReadOnly || submitting}
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
                     file:rounded-md file:border-0 file:text-sm file:font-semibold
                     file:bg-primary file:text-white hover:file:bg-primary-dark"
                 />
-                {formData.archivoUrl && (
-                  <div className="mt-2 text-sm text-gray-600">
-                    <p>Material cargado:
-                      {/* sin el /upload/material/ */}
-                      {formData.archivoUrl.replace(/^\//, '')}
-                      <a href={ formData.archivoUrl.startsWith('http') ? 
-                        formData.archivoUrl :
-                         `${API_BASE_URL}/${formData.archivoUrl.replace(/^\//, '')}` } 
-                         target="_blank" rel="noreferrer" 
-                         className="ml-1 text-primary hover:underline">
-                        Ver archivo
-                      </a>
-                    </p>
-                  </div>
-                )}
-                
-                {/* Progress bar for file upload */}
-                {uploadProgress > 0 && uploadProgress < 100 && (
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                    <div 
-                      className="bg-primary h-2.5 rounded-full" 
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                    <p className="text-xs text-gray-500 mt-1">Subiendo: {uploadProgress}%</p>
-                  </div>
-                )}
+                <p className="text-xs text-gray-500 mt-1">Máximo 50MB por archivo</p>
               </div>
+              
+              {/* Progress bar for file upload */}
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full" 
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                  <p className="text-xs text-gray-500 mt-1">Subiendo: {uploadProgress}%</p>
+                </div>
+              )}
+              
+              {/* Display material files (both uploaded and pending) */}
+              {(archivosMaterial.length > 0 || pendingFiles.length > 0) && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">Archivos de material:</h4>
+                  
+                  {/* Display uploaded files */}
+                  {archivosMaterial.map((material) => (
+                    <div key={material.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          {/* File type icon */}
+                          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">
+                              {material.tipo === 'PDF' ? 'PDF' : 
+                               material.tipo === 'ZIP' ? 'ZIP' : 
+                               material.tipo === 'IMG' ? 'IMG' : 
+                               material.tipo === 'DOC' ? 'DOC' : 'FILE'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {material.nombre}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {material.sizeMB.toFixed(2)} MB • {new Date(material.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <a
+                          href={material.url.startsWith('http') ? 
+                            material.url : 
+                            `${API_BASE_URL}${material.url}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary hover:text-primary-dark text-sm font-medium"
+                        >
+                          Ver
+                        </a>
+                        {!isReadOnly && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMaterial(material.id)}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          >
+                            Eliminar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Display pending files (only in creation mode) */}
+                  {pendingFiles.map((fileData) => (
+                    <div key={fileData.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-md border border-blue-200">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          {/* File type icon */}
+                          <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">
+                              {fileData.tipo === 'PDF' ? 'PDF' : 
+                               fileData.tipo === 'ZIP' ? 'ZIP' : 
+                               fileData.tipo === 'IMG' ? 'IMG' : 
+                               fileData.tipo === 'DOC' ? 'DOC' : 'FILE'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {fileData.nombre}
+                          </p>
+                          <p className="text-xs text-blue-600">
+                            {fileData.sizeMB.toFixed(2)} MB • Pendiente de subir
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-blue-600 font-medium">Pendiente</span>
+                        {!isReadOnly && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMaterial(fileData.id)}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          >
+                            Remover
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+
+
             </div>
 
             {isEditMode && (

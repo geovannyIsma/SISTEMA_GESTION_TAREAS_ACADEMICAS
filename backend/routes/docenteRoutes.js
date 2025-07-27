@@ -71,6 +71,9 @@ router.post('/material/upload', handleMulterError, docenteController.subirMateri
 // Ruta para subir material
 router.put('/material/upload', handleMulterError, docenteController.subirMaterial);
 
+// Ruta para eliminar material
+router.delete('/material/:id', docenteController.eliminarMaterial);
+
 // Obtener tarea específica por ID
 router.get('/tareas/:id', docenteController.getTareaById);
 

@@ -259,7 +259,8 @@ const getTareaEstudianteById = async (req, res) => {
             lastName: true,
             email: true
           }
-        }
+        },
+        archivosMaterial: true
       }
     });
     
