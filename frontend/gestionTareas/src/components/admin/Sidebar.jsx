@@ -187,7 +187,7 @@ const Sidebar = ({ isOpen }) => {
         {isStudent && (
           <Link to="/estudiante/tareas" className={getLinkClass('/estudiante/tareas')}>
             {icons.tasks}
-            Mis Tareas
+            Mis Cursos
           </Link>
         )}
       </nav>

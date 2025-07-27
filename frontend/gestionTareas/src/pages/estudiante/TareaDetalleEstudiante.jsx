@@ -408,57 +408,9 @@ const TareaDetalleEstudiante = () => {
             </div>
           )}
 
-          {/* Comentarios del profesor */}
-          {entrega?.comentariosProfesor && (
-            <div className="bg-gray-50 shadow-sm overflow-hidden rounded-lg border border-gray-100">
-              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Retroalimentación del profesor</h2>
-              </div>
-              <div className="px-4 py-5 sm:p-6">
-                <div className="prose max-w-none">
-                  {entrega.comentariosProfesor}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Información de la tarea */}
-          <div className="bg-gray-50 shadow-sm overflow-hidden rounded-lg border border-gray-100">
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Información</h2>
-            </div>
-            <div className="px-4 py-5 sm:p-6">
-              <dl className="space-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Fecha de publicación</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{formatDateTime(tarea?.fechaPublicacion)}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Fecha límite de entrega</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{formatDateTime(tarea?.fechaEntrega)}</dd>
-                </div>
-                {tarea?.permitirEntregasTardias && (
-                  <div className="flex items-center">
-                    <svg className="h-5 w-5 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="ml-2 text-sm text-gray-600">Se permiten entregas tardías</span>
-                  </div>
-                )}
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Puntuación máxima</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{tarea?.notaMaxima || 10} puntos</dd>
-                </div>
-              </dl>
-            </div>
-          </div>
-
           {/* Formulario de entrega */}
           {puedeEntregar() && (
-            <div className="bg-gray-50 shadow-sm overflow-hidden rounded-lg border border-gray-100">
+            <div className="bg-white shadow-sm overflow-hidden rounded-lg border border-gray-100">
               <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
                 <h2 className="text-lg font-medium text-gray-900">Mi entrega</h2>
               </div>
@@ -645,6 +597,23 @@ const TareaDetalleEstudiante = () => {
             </div>
           )}
 
+          {/* Comentarios del profesor */}
+          {entrega?.comentariosProfesor && (
+            <div className="bg-gray-50 shadow-sm overflow-hidden rounded-lg border border-gray-100">
+              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Retroalimentación del profesor</h2>
+              </div>
+              <div className="px-4 py-5 sm:p-6">
+                <div className="prose max-w-none">
+                  {entrega.comentariosProfesor}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
           {/* Retroalimentaciones del docente */}
           {retroalimentaciones.length > 0 && (
             <div className="bg-white shadow-sm overflow-hidden rounded-lg border border-gray-200">
@@ -711,7 +680,6 @@ const TareaDetalleEstudiante = () => {
             <div className="bg-yellow-50 shadow-sm overflow-hidden rounded-lg border border-yellow-200">
               <div className="px-4 py-5 sm:px-6 border-b border-yellow-200">
                 <h2 className="text-lg font-medium text-gray-900">Calificación</h2>
-                <p className="text-sm text-yellow-700 mt-1">Calificación en formato anterior</p>
               </div>
               <div className="px-4 py-5 sm:p-6">
                 <div className="flex justify-center">
@@ -730,6 +698,39 @@ const TareaDetalleEstudiante = () => {
               </div>
             </div>
           )}
+
+          {/* Información de la tarea */}
+          <div className="bg-gray-50 shadow-sm overflow-hidden rounded-lg border border-gray-100">
+            <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Información</h2>
+            </div>
+            <div className="px-4 py-5 sm:p-6">
+              <dl className="space-y-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Fecha de publicación</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{formatDateTime(tarea?.fechaPublicacion)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Fecha límite de entrega</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{formatDateTime(tarea?.fechaEntrega)}</dd>
+                </div>
+                {tarea?.permitirEntregasTardias && (
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="ml-2 text-sm text-gray-600">Se permiten entregas tardías</span>
+                  </div>
+                )}
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Puntuación máxima</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{tarea?.notaMaxima || 10} puntos</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+
         </div>
       </div>
     </div>

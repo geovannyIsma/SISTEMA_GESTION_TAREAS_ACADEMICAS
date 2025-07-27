@@ -11,6 +11,6 @@ const TareasEstudiante = () => {
 
   // Redirigir a la vista de cursos
   return <Navigate to="/estudiante/cursos" replace />;
-};
+};  
 
 export default TareasEstudiante;
