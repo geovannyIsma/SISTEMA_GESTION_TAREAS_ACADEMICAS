@@ -130,14 +130,14 @@ const Sidebar = ({ isOpen }) => {
   };
 
   return (
-    <div className={`${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed z-30 inset-y-0 left-0 w-64 bg-primary transition duration-300 ease-in-out transform flex flex-col`}>
+    <div className={`${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed z-50 inset-y-0 left-0 w-64 bg-primary transition duration-300 ease-in-out transform flex flex-col`}>
       {/* Logo / título */}
       <div className="px-4 py-6 flex items-center border-b border-primary-dark">
         <div className="flex-shrink-0">
           <img src="/logo_st.svg" alt="Logo" className="h-10 w-10" />
         </div>
         <div className="ml-3">
-          <h1 className="text-xl font-bold text-gray-50">SGTA</h1>
+          <h1 className="text-xl font-bold text-gray-50">SGT</h1>
           <p className="text-xs text-primary-100">Sistema de Gestión de Tareas</p>
         </div>
       </div>

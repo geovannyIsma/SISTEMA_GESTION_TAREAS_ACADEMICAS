@@ -28,17 +28,6 @@ const AdminLayout = ({ children }) => {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-100">
-      {/* Overlay para cerrar sidebar en móvil */}
-      {isMobile && sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-gray-600 bg-opacity-75 z-20"
-          onClick={toggleSidebar}
-        />
-      )}
-      
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} />
-      
       {/* Contenido principal */}
       <div className="flex flex-col w-0 flex-1 overflow-hidden md:ml-64">
         <Header toggleSidebar={toggleSidebar} />
@@ -49,6 +38,17 @@ const AdminLayout = ({ children }) => {
           </div>
         </main>
       </div>
+      
+      {/* Overlay para cerrar sidebar en móvil */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-gray-600/25 z-40"
+          onClick={toggleSidebar}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <Sidebar isOpen={sidebarOpen} />
     </div>
   );
 };

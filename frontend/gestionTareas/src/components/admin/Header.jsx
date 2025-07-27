@@ -135,7 +135,7 @@ const Header = ({ toggleSidebar }) => {
               </svg>
             </button>
             <Link to="/dashboard" className="flex-shrink-0 flex items-center ml-4">
-              <h2 className="text-lg font-semibold text-gray-800">Sistema Gestión Académica</h2>
+              <h2 className="text-lg font-semibold text-gray-800">Sistema de Tareas</h2>
             </Link>
           </div>
           <div className="flex items-center">
