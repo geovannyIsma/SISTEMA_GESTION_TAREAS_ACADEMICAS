@@ -160,7 +160,19 @@ const listarTareasDocente = async (req, res) => {
     const tareas = await prisma.tarea.findMany({
       where: { docenteId: req.user.id },
       include: {
-        archivosMaterial: true
+        archivosMaterial: true,
+        entregas: true,
+        asignaciones: {
+          include: {
+            curso: {
+              include: {
+                estudiantes: {
+                  select: { id: true }
+                }
+              }
+            }
+          }
+        }
       },
       orderBy: { 
         fechaEntrega: 'desc' 
@@ -618,6 +630,83 @@ const getEstadisticasDocente = async (req, res) => {
   }
 };
 
+// Obtener estadísticas del docente POR CURSO
+const getEstadisticasDocentePorCurso = async (req, res) => {
+  try {
+    const { cursoId } = req.params;
+    const curso = await prisma.curso.findFirst({
+      where: {
+        id: Number(cursoId),
+        docentes: { some: { id: req.user.id } }
+      },
+      include: {
+        estudiantes: true
+      }
+    });
+    if (!curso) {
+      return res.status(404).json({ status: 'error', message: 'Curso no encontrado o no asignado' });
+    }
+    // Tareas del docente en este curso
+    const tareas = await prisma.tarea.findMany({
+      where: {
+        docenteId: req.user.id,
+        asignaciones: { some: { cursoId: Number(cursoId) } }
+      },
+      include: {
+        entregas: true
+      }
+    });
+    const ahora = new Date();
+    const proximaSemana = new Date();
+    proximaSemana.setDate(ahora.getDate() + 7);
+
+    const tareasActivas = tareas.filter(t => t.habilitada !== false && new Date(t.fechaEntrega) >= ahora);
+    const tareasProximas = tareasActivas.filter(t => new Date(t.fechaEntrega) <= proximaSemana);
+    const tareasVencidas = tareas.filter(t => t.habilitada !== false && new Date(t.fechaEntrega) < ahora).length;
+
+    // Calcular promedio de calificaciones
+    let sumaCalificaciones = 0;
+    let totalCalificadas = 0;
+    tareas.forEach(tarea => {
+      if (tarea.entregas && tarea.entregas.length > 0) {
+        tarea.entregas.forEach(entrega => {
+          if (entrega.calificacion !== null && entrega.calificacion !== undefined) {
+            sumaCalificaciones += entrega.calificacion;
+            totalCalificadas++;
+          }
+        });
+      }
+    });
+    const promedioCalificaciones = totalCalificadas > 0 ? 
+      (sumaCalificaciones / totalCalificadas).toFixed(2) : null;
+
+    // Entregas pendientes (sin calificar)
+    const entregasPendientes = await prisma.entrega.count({
+      where: {
+        tareaId: { in: tareas.map(t => t.id) },
+        calificacion: null
+      }
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        totalTareas: tareas.length,
+        tareasActivas: tareasActivas.length,
+        tareasProximas: tareasProximas.length,
+        tareasVencidas,
+        tareasPorCalificar: entregasPendientes,
+        entregasPendientes,
+        estudiantes: curso.estudiantes.length,
+        promedioCalificaciones
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas por curso:', error);
+    res.status(500).json({ status: 'error', message: 'Error al obtener estadísticas por curso' });
+  }
+};
+
 // Eliminar una tarea
 const eliminarTarea = async (req, res) => {
   try {
@@ -1016,6 +1105,7 @@ module.exports = {
   listarCursosDocente,
   listarEntregasPendientes,
   getEstadisticasDocente,
+  getEstadisticasDocentePorCurso,
   eliminarTarea,
   eliminarMaterial,
   subirMaterial,

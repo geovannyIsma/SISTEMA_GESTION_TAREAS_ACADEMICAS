@@ -103,6 +103,9 @@ const api = {
     console.log("Llamando al endpoint /docente/estadisticas");
     return apiRequest('/docente/estadisticas');
   },
+  getDocenteEstadisticasPorCurso: (cursoId) => {
+    return apiRequest(`/docente/estadisticas/curso/${cursoId}`);
+  },
     listarCursosDocente: () => {
     console.log("Llamando al endpoint /docente/cursos");
     return apiRequest('/docente/cursos');

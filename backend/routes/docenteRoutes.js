@@ -107,7 +107,9 @@ router.put('/entregas/:id/calificar', docenteController.calificarEntrega);
 router.get('/entregas/:entregaId/retroalimentaciones', docenteController.getRetroalimentacionesEntrega);
 router.get('/tareas/:tareaId/entregas', docenteController.listarEntregasTarea);
 
-// Ruta para obtener estadísticas del docente
+// Ruta para obtener estadísticas del docente (general)
 router.get('/estadisticas', docenteController.getEstadisticasDocente);
+// Ruta para obtener estadísticas por curso
+router.get('/estadisticas/curso/:cursoId', docenteController.getEstadisticasDocentePorCurso);
 
 module.exports = router;
