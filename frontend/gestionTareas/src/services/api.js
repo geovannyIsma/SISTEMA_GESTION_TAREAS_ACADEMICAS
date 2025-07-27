@@ -220,6 +220,19 @@ const api = {
   eliminarMaterial: (materialId) => {
     return apiRequest(`/docente/material/${materialId}`, 'DELETE');
   },
+
+  // Calificación de entregas (para docentes)
+  getEntregaDetails: (entregaId) => {
+    return apiRequest(`/docente/entregas/${entregaId}`);
+  },
+  
+  calificarEntrega: (entregaId, data) => {
+    return apiRequest(`/docente/entregas/${entregaId}/calificar`, 'PUT', data);
+  },
+  
+  listarEntregasTarea: (tareaId) => {
+    return apiRequest(`/docente/tareas/${tareaId}/entregas`);
+  },
 };
 
 export default api;

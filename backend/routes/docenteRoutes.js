@@ -101,6 +101,11 @@ router.get('/cursos', docenteController.listarCursosDocente);
 // Rutas para gestionar entregas
 router.get('/entregas/pendientes', docenteController.listarEntregasPendientes);
 
+// Rutas para calificación de entregas
+router.get('/entregas/:id', docenteController.getEntregaDetails);
+router.put('/entregas/:id/calificar', docenteController.calificarEntrega);
+router.get('/tareas/:tareaId/entregas', docenteController.listarEntregasTarea);
+
 // Ruta para obtener estadísticas del docente
 router.get('/estadisticas', docenteController.getEstadisticasDocente);
 

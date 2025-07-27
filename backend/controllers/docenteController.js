@@ -773,6 +773,164 @@ const subirMaterial = async (req, res) => {
   }
 };
 
+// Obtener detalles de una entrega específica para calificar
+const getEntregaDetails = async (req, res) => {
+try {
+  const { id } = req.params;
+  const entregaId = Number(id);
+
+  const entrega = await prisma.entrega.findUnique({
+    where: { id: entregaId },
+    include: {
+      tarea: {
+        include: {
+          asignaciones: {
+            include: {
+              curso: true
+            }
+          }
+        }
+      },
+      estudiante: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      },
+      archivos: true
+    }
+  });
+
+  if (!entrega) {
+    return res.status(404).json({ status: 'error', message: 'Entrega no encontrada' });
+  }
+
+  // Verificar que el docente tenga permisos para calificar esta entrega
+  if (entrega.tarea.docenteId !== req.user.id) {
+    return res.status(403).json({ status: 'error', message: 'No tienes permisos para calificar esta entrega' });
+  }
+
+  res.status(200).json({ status: 'success', data: entrega });
+} catch (error) {
+  console.error('Error en getEntregaDetails:', error);
+  res.status(500).json({ status: 'error', message: 'Error al obtener detalles de la entrega' });
+}
+};
+
+// Calificar una entrega
+const calificarEntrega = async (req, res) => {
+try {
+  const { id } = req.params;
+  const { calificacion, observaciones } = req.body;
+  const entregaId = Number(id);
+
+  // Validar calificación
+  if (calificacion === undefined || calificacion === null) {
+    return res.status(400).json({ status: 'error', message: 'La calificación es requerida' });
+  }
+
+  if (calificacion < 0 || calificacion > 10) {
+    return res.status(400).json({ status: 'error', message: 'La calificación debe estar entre 0 y 10' });
+  }
+
+  // Verificar que la entrega existe y el docente tiene permisos
+  const entrega = await prisma.entrega.findUnique({
+    where: { id: entregaId },
+    include: {
+      tarea: true
+    }
+  });
+
+  if (!entrega) {
+    return res.status(404).json({ status: 'error', message: 'Entrega no encontrada' });
+  }
+
+  if (entrega.tarea.docenteId !== req.user.id) {
+    return res.status(403).json({ status: 'error', message: 'No tienes permisos para calificar esta entrega' });
+  }
+
+  // Actualizar la entrega con la calificación
+  const entregaActualizada = await prisma.entrega.update({
+    where: { id: entregaId },
+    data: {
+      calificacion: parseFloat(calificacion),
+      observaciones: observaciones || null
+    },
+    include: {
+      estudiante: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      },
+      tarea: {
+        select: {
+          id: true,
+          titulo: true
+        }
+      }
+    }
+  });
+
+  res.status(200).json({ 
+    status: 'success', 
+    message: 'Entrega calificada correctamente',
+    data: entregaActualizada 
+  });
+} catch (error) {
+  console.error('Error en calificarEntrega:', error);
+  res.status(500).json({ status: 'error', message: 'Error al calificar la entrega' });
+}
+};
+
+// Listar todas las entregas de una tarea específica
+const listarEntregasTarea = async (req, res) => {
+try {
+  const { tareaId } = req.params;
+  const tareaIdNum = Number(tareaId);
+
+  // Verificar que la tarea existe y pertenece al docente
+  const tarea = await prisma.tarea.findUnique({
+    where: { id: tareaIdNum }
+  });
+
+  if (!tarea) {
+    return res.status(404).json({ status: 'error', message: 'Tarea no encontrada' });
+  }
+
+  if (tarea.docenteId !== req.user.id) {
+    return res.status(403).json({ status: 'error', message: 'No tienes permisos para ver las entregas de esta tarea' });
+  }
+
+  const entregas = await prisma.entrega.findMany({
+    where: { tareaId: tareaIdNum },
+    include: {
+      estudiante: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      },
+      archivos: true
+    },
+    orderBy: {
+      fecha: 'desc'
+    }
+  });
+
+  res.status(200).json({ status: 'success', data: entregas });
+} catch (error) {
+  console.error('Error en listarEntregasTarea:', error);
+  res.status(500).json({ status: 'error', message: 'Error al listar entregas de la tarea' });
+}
+};
+
 module.exports = {
   crearTarea,
   editarTarea,
@@ -785,6 +943,9 @@ module.exports = {
   listarEntregasPendientes,
   getEstadisticasDocente,
   eliminarTarea,
+  eliminarMaterial,
   subirMaterial,
-  eliminarMaterial
+  getEntregaDetails,
+  calificarEntrega,
+  listarEntregasTarea
 };

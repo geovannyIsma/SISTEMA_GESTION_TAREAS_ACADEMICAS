@@ -19,6 +19,7 @@ import AsignaturaForm from './pages/asignaturas/AsignaturaForm';
 import './App.css';
 import TareaDocenteForm from './pages/docente/TareaDocenteForm';
 import AsignarTarea from './pages/docente/AsignarTarea';
+import CalificarEntregas from './pages/docente/CalificarEntregas';
 import CursosEstudiante from './pages/estudiante/CursosEstudiante';
 import CursoTareasEstudiante from './pages/estudiante/CursoTareasEstudiante';
 import TareasEstudiante from './pages/estudiante/TareasEstudiante';
@@ -126,6 +127,11 @@ function App() {
             <Route path="/docente/tareas/:id/asignar" element={
               <AdminLayout>
                 <AsignarTarea />
+              </AdminLayout>
+            } />
+            <Route path="/docente/tareas/:tareaId/calificar" element={
+              <AdminLayout>
+                <CalificarEntregas />
               </AdminLayout>
             } />
             

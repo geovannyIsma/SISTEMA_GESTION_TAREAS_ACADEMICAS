@@ -273,6 +273,103 @@ const TareaDetalleEstudiante = () => {
             </div>
           </div>
 
+          {/* Material de apoyo subido por el docente */}
+          {tarea?.archivosMaterial && tarea.archivosMaterial.length > 0 && (
+            <div className="bg-white shadow-sm overflow-hidden rounded-lg border border-gray-100">
+              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Material de apoyo</h2>
+                <p className="text-sm text-gray-600 mt-1">Archivos proporcionados por el docente</p>
+              </div>
+              <div className="px-4 py-5 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {tarea.archivosMaterial.map((material) => {
+                    // Función para obtener el icono según el tipo de archivo
+                    const getFileIcon = (tipo) => {
+                      const tipoLower = tipo?.toLowerCase() || '';
+                      if (tipoLower.includes('pdf')) {
+                        return (
+                          <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                          </svg>
+                        );
+                      } else if (tipoLower.includes('image') || tipoLower.includes('jpg') || tipoLower.includes('png') || tipoLower.includes('jpeg')) {
+                        return (
+                          <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                          </svg>
+                        );
+                      } else if (tipoLower.includes('zip') || tipoLower.includes('rar')) {
+                        return (
+                          <svg className="w-8 h-8 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                          </svg>
+                        );
+                      } else if (tipoLower.includes('doc') || tipoLower.includes('docx')) {
+                        return (
+                          <svg className="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                          </svg>
+                        );
+                      } else {
+                        return (
+                          <svg className="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                          </svg>
+                        );
+                      }
+                    };
+
+                    return (
+                      <div key={material.id} className="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                        <div className="flex-shrink-0 mr-4">
+                          {getFileIcon(material.tipo)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <a 
+                            href={material.url.startsWith('http') ? 
+                              material.url : 
+                              `${API_BASE_URL}${material.url}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block hover:text-primary transition-colors duration-200"
+                          >
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {material.nombre}
+                            </p>
+                            <div className="flex items-center mt-1 text-xs text-gray-500">
+                              <span className="uppercase">{material.tipo}</span>
+                              {material.sizeMB && (
+                                <>
+                                  <span className="mx-1">•</span>
+                                  <span>{material.sizeMB} MB</span>
+                                </>
+                              )}
+                            </div>
+                          </a>
+                        </div>
+                        <div className="flex-shrink-0 ml-4">
+                          <a 
+                            href={material.url.startsWith('http') ? 
+                              material.url : 
+                              `${API_BASE_URL}${material.url}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-primary bg-primary-50 hover:bg-primary-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+                          >
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Descargar
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Recursos de la tarea */}
           {tarea?.recursos && tarea.recursos.length > 0 && (
             <div className="bg-gray-50 shadow-sm overflow-hidden rounded-lg border border-gray-100">

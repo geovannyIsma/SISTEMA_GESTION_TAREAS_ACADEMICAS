@@ -346,6 +346,12 @@ const TareasDocente = () => {
                       >
                         Asignar
                       </Link>
+                      <Link 
+                        to={`/docente/tareas/${tarea.id}/calificar`} 
+                        className="text-green hover:text-green-dark mr-4 hover:underline"
+                      >
+                        Calificar
+                      </Link>
                       {tarea.habilitada && (
                         <button 
                           onClick={() => confirmDisable(tarea.id, tarea.titulo)} 
